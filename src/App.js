@@ -4,6 +4,32 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
+var objList=[
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  },
+    { "id": 1, "username": "Apples",  "email": "$2",  "phone": "$2",  "email": "$2",  "fullname": "$2",  "token": "$2" ,  "balance": "$2" ,  "datetimeCreated": "$2"  }
+  ];
+
 class Person extends React.Component {
  
   // Use the render function to return JSX component
@@ -11,7 +37,7 @@ class Person extends React.Component {
     return (
     <tr>
       <th>{this.props.id}</th>
-      <th>>{this.props.username}</th>
+      <th>{this.props.username}</th>
       <th>{this.props.email}</th>
       <th>{this.props.phone}</th>
       <th>{this.props.fullname}</th>
@@ -23,12 +49,28 @@ class Person extends React.Component {
     }
 }
 
+class Menu extends React.Component {
+  render() {
+    return (
+      <div id="left-menu">
+      <ul className="list-group">
+      <li className="list-group-item">Users</li>
+      <li className="list-group-item">Market</li>
+      <li className="list-group-item">History</li>
+    </ul>
+    </div>
+      );
+    }
+}
+
 function App() {
   fetch("").then(res => res.json())
   return (
-    <div className="App">
-      <header className="App-header">
+    <div>
+      <Menu />
         <div className="table">
+              
+
           <thead> <tr>
             <th>Id</th>
             <th>Username</th>
@@ -41,11 +83,11 @@ function App() {
           </tr>
           </thead>
           <tbody>
-          <Person id='1' username='Bill' email='Gates' phone='0962' fullname='lhd' token='' balance='390' datetimeCreated='43243' />
+          {objList.map(item => (
+            <Person id={item.id} username={item.username} email={item.email} phone={item.phone} fullname={item.fullname} token={item.token} balance={item.balance} datetimeCreated={item.datetimeCreated} />          ))}
             </tbody>
         </div>
-      </header>
-    </div>
+        </div>
   );
 }
 
