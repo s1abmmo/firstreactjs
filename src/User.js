@@ -102,24 +102,44 @@ class LoadUserTable extends React.Component {
 }
 
 class Pagination extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            maxPage: 50,
+            currentGroupPage: 0,
+        };
+        this.PreviousPage = this.PreviousPage.bind(this);
+        this.NextPage = this.NextPage.bind(this);
+    }
+    PreviousPage() {
+        this.setState({
+            currentGroupPage: this.state.currentGroupPage - 1
+        })
+    }
+    NextPage() {
+        this.setState({
+            currentGroupPage: this.state.currentGroupPage + 1
+        })
+    }
+
     render() {
+
+        var maxGroupPage = this.state.maxPage / 5;
+        console.log(this.state.currentGroupPage+"_"+maxGroupPage);
+        var indents = [];
+         if (this.state.currentGroupPage > 0)
+            indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.PreviousPage}>Previous</a></li>);
+        for (var i = 1; i <= 5; i++) {
+            var iexport = i + this.state.currentGroupPage * 5;
+            if (iexport <= this.state.maxPage)
+                indents.push(<li class="page-item"><a class="page-link" href="#">{iexport}</a></li>);
+        }
+         if(this.state.currentGroupPage <maxGroupPage-1)
+        indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.NextPage}>Next</a></li>);
         return (
-            <nav aria-label="...">
+            <nav aria-label="Page navigation example">
                 <ul class="pagination justify-content-center">
-                    <li class="page-item disabled">
-                        <span class="page-link">Previous</span>
-                    </li>
-                    <li class="page-item"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item active" aria-current="page">
-                        <span class="page-link">
-                            2
-          <span class="sr-only">(current)</span>
-                        </span>
-                    </li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Next</a>
-                    </li>
+                    {indents}
                 </ul>
             </nav>);
     }

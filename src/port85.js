@@ -6,6 +6,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 var mysql = require('mysql');
 var dateFormat = require('dateformat');
 var path = require('path');
+var crypto = require('crypto');
 
 function generate_token(length) {
     //edit the token allowed characters
@@ -61,6 +62,13 @@ conn.connect(function (err) {
         if (err)
             console.log(err.message)
     });
+    conn.query("CREATE TABLE administratorAccounts ( adminId INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, adminName VARCHAR(100),adminPassword NVARCHAR(100),adminToken VARCHAR(32),datetimeCreated DATETIME,permissionActive VARCHAR(5),permissionBanned VARCHAR(5),permissionAddMoney VARCHAR(5),permissionDeductMoney VARCHAR(5),permissionApproveTrip VARCHAR(5),permissionCancelTrip VARCHAR(5),permissionSuspendTrip VARCHAR(5),permissionEditTrip VARCHAR(5),permissionApproveCar VARCHAR(5),permissionSuspendCar VARCHAR(5));", function (err, result, fields) {
+        if (!err)
+            console.log("Create table administratorAccounts success !");
+        if (err)
+            console.log(err.message)
+    });
+
 });
 
 app.get('/login', function (req, res) {
@@ -133,6 +141,26 @@ async function CheckAuthentication(user_id, user_name, token) {
         });
     })
 }
+
+async function CheckAuthenticationAdmin(adminId, adminName, adminToken) {
+    return new Promise(function (resolve, reject) {
+        console.log('Check token Admin:' + adminName);
+        var tokenlive = false;
+        conn.query("SELECT adminId,adminName,adminToken FROM administratorAccounts WHERE adminId='" + adminId + "';", function (err, resultAuthentication, fields) {
+            if (err) throw err;
+            console.log(' ' + resultAuthentication.length);
+            if (resultAuthentication.length > 0) {
+                if (adminName == resultAuthentication[0].adminName && adminToken == resultAuthentication[0].adminToken && adminToken != null && adminToken != "") {
+                    console.log(resultAuthentication[0]);
+                    tokenlive = true;
+                }
+            }
+            console.log(tokenlive);
+            resolve(tokenlive);
+        });
+    })
+}
+
 
 app.get('/checktoken', function (req, res) {
     var user_id = req.param('id');
@@ -526,7 +554,7 @@ app.get('/HistoryOfPostedTrips', async function (req, res) {
             while (i < result.length) {
                 var obj = {
                     tripId: "null",
-                    tripIdPendding:result[i].tripId.toString(),
+                    tripIdPendding: result[i].tripId.toString(),
                     tripCode: result[i].tripCode,
                     dateTimePosted: dateFormat(result[i].dateTimePosted, "yyyy-mm-dd HH:MM:ss"),
                     statusTripPosted: "0"
@@ -567,9 +595,9 @@ app.get('/transactionHistory', async function (req, res) {
     if (await CheckAuthentication(accountId, accountUsername, token)) {
         conn.query("SELECT transactionId,transactionAmout,transactionNote,transactionDateTime FROM transactionHistory WHERE accountId='" + accountId + "';", async function (err, result, fields) {
             if (err) throw err;
-            var objectList=[];
-            var i=0;
-            while(i<result.length){
+            var objectList = [];
+            var i = 0;
+            while (i < result.length) {
                 objectList.push(
                     {
                         transactionId: result[i].transactionId,
@@ -581,37 +609,207 @@ app.get('/transactionHistory', async function (req, res) {
                 i++;
             }
             console.log(objectList);
-            res.send(JSON.stringify(objectList));    
+            res.send(JSON.stringify(objectList));
         });
     }
 });
+
+app.get('/createAdminAccount', async function (req, res) {
+    var adminName = req.param('adminName');
+    var adminPassword = req.param('adminPassword');
+    var dateTimeCreated = dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss");
+    var permissionActive = req.param('permissionActive');
+    var permissionBanned = req.param('permissionBanned');
+    var permissionAddMoney = req.param('permissionAddMoney');
+    var permissionDeductMoney = req.param('permissionDeductMoney');
+    var permissionApproveTrip = req.param('permissionApproveTrip');
+    var permissionCancelTrip = req.param('permissionCancelTrip');
+    var permissionSuspendTrip = req.param('permissionSuspendTrip');
+    var permissionEditTrip = req.param('permissionEditTrip');
+    var permissionApproveCar = req.param('permissionApproveCar');
+    var permissionSuspendCar = req.param('permissionSuspendCar');
+    console.log('Create Admin:' + adminName + ' adminPassword: ' + adminPassword);
+    conn.query("SELECT adminName FROM administratorAccounts WHERE adminName = '" + adminName + "';", function (err, result, fields) {
+        if (err) throw err;
+        console.log(' ' + result.length);
+        if (result.length > 0) {
+            var obj = {
+                status: "ERROR",
+                message: "Tên tài khoản đã tồn tại"
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        } else if (result.length == 0) {
+            if (adminPassword.length > 7 && adminPassword.length < 20) {
+                conn.query("INSERT INTO administratorAccounts (adminName,adminPassword,dateTimeCreated,permissionActive,permissionBanned,permissionAddMoney,permissionDeductMoney,permissionApproveTrip,permissionCancelTrip,permissionSuspendTrip,permissionEditTrip,permissionApproveCar,permissionSuspendCar) VALUES ('" + adminName + "','" + crypto.createHash('sha256').update(adminPassword).digest('base64') + "','" + dateTimeCreated + "','" + permissionActive + "','" + permissionBanned + "','" + permissionAddMoney + "','" + permissionDeductMoney + "','" + permissionApproveTrip + "','" + permissionCancelTrip + "','" + permissionSuspendTrip + "','" + permissionEditTrip + "','" + permissionApproveCar + "','" + permissionSuspendCar + "');", function (err, result, fields) {
+                    if (err) throw err;
+                    // var id_logs = result.insertId.toString();
+                    // var obj1 = {
+                    //     id: id_logs
+                    // }
+                    var obj = {
+                        status: "OK",
+                        message: "Đăng kí thành công"
+                    }
+                    console.log(JSON.stringify(obj));
+                    res.send(JSON.stringify(obj));
+                });
+            } else {
+                var obj = {
+                    status: "ERROR",
+                    message: "Mật khẩu không đạt yêu cầu"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+
+        }
+    });
+});
+
+app.get('/adminLogin', async function (req, res) {
+    var adminName = req.param('adminName');
+    var adminPassword = req.param('adminPassword');
+    console.log('Check login admin ' + adminName);
+    conn.query("SELECT adminId FROM administratorAccounts WHERE adminName = '" + adminName + "' AND adminPassword='" + crypto.createHash('sha256').update(adminPassword).digest('base64') + "';", function (err, result, fields) {
+        if (err) throw err;
+        console.log(' ' + result.length);
+        if (result.length > 0) {
+            var adminId = result[0].adminId;
+            var adminToken = generate_token(32);
+
+            conn.query("UPDATE administratorAccounts SET adminToken='" + adminToken + "' WHERE adminName=" + adminName + " AND adminId=" + adminId + ";", function (err, result, fields) {
+                if (err) throw err;
+
+                var obj = {
+                    status: "OK",
+                    message: "Đăng nhập thành công",
+                    adminId: adminId,
+                    adminName: adminName,
+                    adminToken: adminToken,
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            });
+        } else {
+
+            var obj = {
+                status: "ERROR",
+                message: "Sai tên đăng nhập hoặc mật khẩu",
+                token: ""
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+
+        }
+    });
+
+});
+
+app.get('/checkAdminToken', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    console.log('Check token admin ' + adminName);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken)) {
+        conn.query("SELECT permissionActive,permissionBanned,permissionAddMoney,permissionDeductMoney,permissionApproveTrip,permissionCancelTrip,permissionSuspendTrip,permissionEditTrip,permissionApproveCar,permissionSuspendCar FROM administratorAccounts WHERE adminId = '" + adminId + "' AND adminName='" + adminName + "';", function (err, result, fields) {
+            if (err) throw err;
+            if (result.length > 0) {
+                var obj = {
+                    status: "SUCCESS",
+                    message: "SUCCESS !",
+                    permissionActive: result[0].permissionActive,
+                    permissionBanned: result[0].permissionBanned,
+                    permissionAddMoney: result[0].permissionAddMoney,
+                    permissionDeductMoney: result[0].permissionDeductMoney,
+                    permissionApproveTrip: result[0].permissionApproveTrip,
+                    permissionCancelTrip: result[0].permissionCancelTrip,
+                    permissionSuspendTrip: result[0].permissionSuspendTrip,
+                    permissionEditTrip: result[0].permissionEditTrip,
+                    permissionApproveCar: result[0].permissionApproveCar,
+                    permissionSuspendCar: result[0].permissionSuspendCar
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            } else {
+                var obj = {
+                    status: "ERROR",
+                    message: "Error Unknown"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+        });
+    } else {
+        var obj = {
+            status: "ERROR",
+            message: "Token died"
+        }
+        console.log(JSON.stringify(obj));
+        res.send(JSON.stringify(obj));
+    }
+});
+
+
 
 app.get('/users', async function (req, res) {
     // var accountId = req.param('accountId');
     // var accountUsername = req.param('accountUsername');
     // var token = req.param('token');
     // if (await CheckAuthentication(accountId, accountUsername, token)) {
-        conn.query("SELECT id,username,email,phone,fullname,currentBalance,datetimeCreated FROM accounts;", async function (err, result, fields) {
-            if (err) throw err;
-            var objectList=[];
-            var i=0;
-            while(i<result.length){
-                objectList.push(
-                    {
-                        id: result[i].id,
-                        username: result[i].username,
-                        email: result[i].email,
-                        phone: result[i].phone,
-                        fullname: result[i].fullname,
-                        balance: result[i].currentBalance,
-                        datetimeCreated: dateFormat(result[i].datetimeCreated, "yyyy-mm-dd HH:MM:ss"),
-                    }
-                )
-                i++;
-            }
-            console.log(objectList);
-            res.send(JSON.stringify(objectList));    
-        });
+    conn.query("SELECT id,username,email,phone,fullname,currentBalance,datetimeCreated FROM accounts LIMIT 1,2;", async function (err, result, fields) {
+        if (err) throw err;
+        var objectList = [];
+        var i = 0;
+        while (i < result.length) {
+            objectList.push(
+                {
+                    id: result[i].id,
+                    username: result[i].username,
+                    email: result[i].email,
+                    phone: result[i].phone,
+                    fullname: result[i].fullname,
+                    balance: result[i].currentBalance,
+                    datetimeCreated: dateFormat(result[i].datetimeCreated, "yyyy-mm-dd HH:MM:ss"),
+                }
+            )
+            i++;
+        }
+        console.log(objectList);
+        res.send(JSON.stringify(objectList));
+    });
+    // }
+});
+
+app.get('/setUserPermission', async function (req, res) {
+    var userPermission = req.param('userPermission');
+    var idUser = req.param('idUser');
+    var userName = req.param('userName');
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminCookie = req.param('adminCookie');
+    // if (await CheckAuthentication(accountId, accountUsername, token)) {
+    conn.query("SELECT id,username,email,phone,fullname,currentBalance,datetimeCreated FROM accounts;", async function (err, result, fields) {
+        if (err) throw err;
+        var objectList = [];
+        var i = 0;
+        while (i < result.length) {
+            objectList.push(
+                {
+                    id: result[i].id,
+                    username: result[i].username,
+                    email: result[i].email,
+                    phone: result[i].phone,
+                    fullname: result[i].fullname,
+                    balance: result[i].currentBalance,
+                    datetimeCreated: dateFormat(result[i].datetimeCreated, "yyyy-mm-dd HH:MM:ss"),
+                }
+            )
+            i++;
+        }
+        console.log(objectList);
+        res.send(JSON.stringify(objectList));
+    });
     // }
 });
 
