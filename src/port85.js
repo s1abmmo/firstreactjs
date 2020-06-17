@@ -38,7 +38,7 @@ var conn = mysql.createConnection({
 conn.connect(function (err) {
     if (err) throw err;
     console.log("Connected!");
-    conn.query("CREATE TABLE accounts ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, username VARCHAR(15), password VARCHAR(16),email VARCHAR(100),phone VARCHAR(100), fullname NVARCHAR(50),token VARCHAR(32),currentBalance VARCHAR(10),dateTimeCreated DATETIME);", function (err, result, fields) {
+    conn.query("CREATE TABLE accounts ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, username VARCHAR(15), password VARCHAR(16),email VARCHAR(100),phone VARCHAR(100), fullname NVARCHAR(50),token VARCHAR(32),currentBalance VARCHAR(10),dateTimeCreated DATETIME,status VARCHAR(1));", function (err, result, fields) {
         if (!err)
             console.log("Create table success !");
         if (err)
@@ -142,17 +142,26 @@ async function CheckAuthentication(user_id, user_name, token) {
     })
 }
 
-async function CheckAuthenticationAdmin(adminId, adminName, adminToken) {
+async function CheckAuthenticationAdmin(adminId, adminName, adminToken, permission) {
     return new Promise(function (resolve, reject) {
-        console.log('Check token Admin:' + adminName);
+        console.log('Check token Admin:' + adminId + " " + adminName + " " + adminToken);
         var tokenlive = false;
-        conn.query("SELECT adminId,adminName,adminToken FROM administratorAccounts WHERE adminId='" + adminId + "';", function (err, resultAuthentication, fields) {
+        var permissionText = "";
+        if (permission != null && permission != "")
+            permissionText = "," + permission;
+        console.log(permissionText);
+        conn.query("SELECT adminId,adminName,adminToken" + permissionText + " FROM administratorAccounts WHERE adminId='" + adminId + "';", function (err, resultAuthentication, fields) {
             if (err) throw err;
             console.log(' ' + resultAuthentication.length);
             if (resultAuthentication.length > 0) {
                 if (adminName == resultAuthentication[0].adminName && adminToken == resultAuthentication[0].adminToken && adminToken != null && adminToken != "") {
-                    console.log(resultAuthentication[0]);
                     tokenlive = true;
+                    if (permission != null && permission != "") {
+                        console.log(resultAuthentication[0][permission]);
+                        tokenlive = false;
+                        if (resultAuthentication[0][permission] == true || resultAuthentication[0][permission] == "true")
+                            tokenlive = true;
+                    }
                 }
             }
             console.log(tokenlive);
@@ -711,12 +720,12 @@ app.get('/checkAdminToken', async function (req, res) {
     var adminName = req.param('adminName');
     var adminToken = req.param('adminToken');
     console.log('Check token admin ' + adminName);
-    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken)) {
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
         conn.query("SELECT permissionActive,permissionBanned,permissionAddMoney,permissionDeductMoney,permissionApproveTrip,permissionCancelTrip,permissionSuspendTrip,permissionEditTrip,permissionApproveCar,permissionSuspendCar FROM administratorAccounts WHERE adminId = '" + adminId + "' AND adminName='" + adminName + "';", function (err, result, fields) {
             if (err) throw err;
             if (result.length > 0) {
                 var obj = {
-                    status: "SUCCESS",
+                    status: "OK",
                     message: "SUCCESS !",
                     permissionActive: result[0].permissionActive,
                     permissionBanned: result[0].permissionBanned,
@@ -750,35 +759,80 @@ app.get('/checkAdminToken', async function (req, res) {
     }
 });
 
-
-
-app.get('/users', async function (req, res) {
-    // var accountId = req.param('accountId');
-    // var accountUsername = req.param('accountUsername');
-    // var token = req.param('token');
-    // if (await CheckAuthentication(accountId, accountUsername, token)) {
-    conn.query("SELECT id,username,email,phone,fullname,currentBalance,datetimeCreated FROM accounts LIMIT 1,2;", async function (err, result, fields) {
-        if (err) throw err;
-        var objectList = [];
-        var i = 0;
-        while (i < result.length) {
-            objectList.push(
+app.get('/usersCountPage', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    //console.log(rowStart + "," + maxRowInPage);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT COUNT(*) AS pageCount FROM accounts;", async function (err, result, fields) {
+            if (err) throw err;
+            if (result.length > 0) {
+                var obj =
                 {
-                    id: result[i].id,
-                    username: result[i].username,
-                    email: result[i].email,
-                    phone: result[i].phone,
-                    fullname: result[i].fullname,
-                    balance: result[i].currentBalance,
-                    datetimeCreated: dateFormat(result[i].datetimeCreated, "yyyy-mm-dd HH:MM:ss"),
+                    status: "OK",
+                    pageCount: (result[0].pageCount / maxRowInPage)
                 }
-            )
-            i++;
+                console.log(obj);
+                res.send(JSON.stringify(obj));
+            }
+        });
+    }
+});
+
+var maxRowInPage = 50;
+app.get('/users', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var page = req.param('page');
+    var rowStart = ((page - 1) * maxRowInPage);
+    console.log(rowStart + "," + maxRowInPage);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT id,username,email,phone,fullname,currentBalance,datetimeCreated FROM accounts LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
+            if (err) throw err;
+            var objectList = [];
+            var i = 0;
+            while (i < result.length) {
+                objectList.push(
+                    {
+                        id: result[i].id,
+                        username: result[i].username,
+                        email: result[i].email,
+                        phone: result[i].phone,
+                        fullname: result[i].fullname,
+                        balance: result[i].currentBalance,
+                        datetimeCreated: dateFormat(result[i].datetimeCreated, "yyyy-mm-dd HH:MM:ss"),
+                    }
+                )
+                i++;
+            }
+            console.log(objectList);
+            res.send(JSON.stringify(objectList));
+        });
+    }
+});
+
+app.get('/test', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, "permissionActive")) {
+        var obj = {
+            status: "OK",
+            message: "Token died"
         }
-        console.log(objectList);
-        res.send(JSON.stringify(objectList));
-    });
-    // }
+        console.log(JSON.stringify(obj));
+        res.send(JSON.stringify(obj));
+    } else {
+        var obj = {
+            status: "ERROR",
+            message: "Token died"
+        }
+        console.log(JSON.stringify(obj));
+        res.send(JSON.stringify(obj));
+
+    }
 });
 
 app.get('/setUserPermission', async function (req, res) {
@@ -787,30 +841,77 @@ app.get('/setUserPermission', async function (req, res) {
     var userName = req.param('userName');
     var adminId = req.param('adminId');
     var adminName = req.param('adminName');
-    var adminCookie = req.param('adminCookie');
-    // if (await CheckAuthentication(accountId, accountUsername, token)) {
-    conn.query("SELECT id,username,email,phone,fullname,currentBalance,datetimeCreated FROM accounts;", async function (err, result, fields) {
-        if (err) throw err;
-        var objectList = [];
-        var i = 0;
-        while (i < result.length) {
-            objectList.push(
-                {
-                    id: result[i].id,
-                    username: result[i].username,
-                    email: result[i].email,
-                    phone: result[i].phone,
-                    fullname: result[i].fullname,
-                    balance: result[i].currentBalance,
-                    datetimeCreated: dateFormat(result[i].datetimeCreated, "yyyy-mm-dd HH:MM:ss"),
-                }
-            )
-            i++;
-        }
-        console.log(objectList);
-        res.send(JSON.stringify(objectList));
+    var adminToken = req.param('adminToken');
+    console.log(idUser);
+    var userPermissionText = null;
+    if (userPermission == "1") {
+        userPermissionText = "permissionActive";
+    } else if (userPermission == "1") {
+        userPermissionText = "permissionBanned";
+    }
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken,userPermissionText)) {
+        conn.query("UPDATE accounts SET status='"+userPermission+"' WHERE username='"+userName+"' AND id="+idUser+";", async function (err, result, fields) {
+            if (err) throw err;
+            var obj = {
+                status: "OK",
+                message: "Đặt quyền thành công"
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
     });
-    // }
+    }else{
+        var obj = {
+            status: "ERROR",
+            message: "Chứng thực thất bại"
+        }
+        console.log(JSON.stringify(obj));
+        res.send(JSON.stringify(obj));
+
+    }
+});
+
+app.get('/addBalance', async function (req, res) {
+    var amount = req.param('amount');
+    var idUser = req.param('idUser');
+    var userName = req.param('userName');
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var amountInt=Number(amount);
+    console.log(idUser);
+    var permissionText = null;
+    if (amountInt>0) {
+        permissionText = "permissionAddMoney";
+    } else if (amountInt<0) {
+        permissionText = "permissionDeductMoney";
+    }
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken,permissionText)) {
+        conn.query("SELECT currentBalance FROM accounts WHERE id = '" + idUser + "' AND userName = '" + userName + "';", function (err, result, fields) {
+            if (err) throw err;
+            if(result.length > 0){
+                var currentBalance = Number(result[0].currentBalance);
+                var amountAdd=currentBalance+amountInt;
+                conn.query("UPDATE accounts SET currentBalance='"+amountAdd+"' WHERE username='"+userName+"' AND id="+idUser+";", async function (err, result, fields) {
+                    if (err) throw err;
+                    var obj = {
+                        status: "OK",
+                        message: "Add balance success"
+                    }
+                    console.log(JSON.stringify(obj));
+                    res.send(JSON.stringify(obj));
+            });
+        
+            }
+        });
+    }else{
+        var obj = {
+            status: "ERROR",
+            message: "Chứng thực thất bại"
+        }
+        console.log(JSON.stringify(obj));
+        res.send(JSON.stringify(obj));
+
+    }
 });
 
 var htmlPath = path.join(__dirname, 'firstreact/build');

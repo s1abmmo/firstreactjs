@@ -2,9 +2,24 @@ import React from 'react';
 //import logo from './logo.svg';
 import './App.css';
 import Cookies from 'js-cookie';
+import { createStore } from 'redux'
+import CurrencyFormat from 'react-currency-format';
 
-function setUserPermission(userPermission, idUser, userName, adminId, adminName, adminCookie) {
-    fetch("/setUserPermission?userPermission=" + userPermission + "&idUser=" + idUser + "&userName=" + userName + "&adminId=" + adminId + "&adminName=" + adminName + "&adminCookie=" + adminCookie)
+function counter(state = { value: 1, status: false }, action, value) {
+    switch (action.type) {
+        case 'VALUE':
+            return state = { value: action.value, status: true };
+        case 'FALSE':
+            return state = { value: state.value, status: false };
+        default:
+            return state
+    }
+}
+
+let store = createStore(counter);
+
+function setUserPermission(userPermission, idUser, userName, adminId, adminName, adminToken) {
+    fetch("/setUserPermission?userPermission=" + userPermission + "&idUser=" + idUser + "&userName=" + userName + "&adminId=" + adminId + "&adminName=" + adminName + "&adminToken=" + adminToken)
         .then(res => res.json())
         .then(
             (result) => {
@@ -13,9 +28,6 @@ function setUserPermission(userPermission, idUser, userName, adminId, adminName,
                     items: result.items
                 });
             },
-            // Note: it's important to handle errors here
-            // instead of a catch() block so that we don't swallow
-            // exceptions from actual bugs in components.
             (error) => {
                 this.setState({
                     isLoaded: true,
@@ -26,8 +38,8 @@ function setUserPermission(userPermission, idUser, userName, adminId, adminName,
 }
 
 
-function addBalance(amout, idUser, userName, adminId, adminName, adminCookie) {
-    fetch("/addBalance?amount=" + amout + "&idUser=" + idUser + "&userName=" + userName + "&adminId=" + adminId + "&adminName=" + adminName + "&adminCookie=" + adminCookie)
+function addBalance(amout, idUser, userName, adminId, adminName, adminToken) {
+    fetch("/addBalance?amount=" + amout + "&idUser=" + idUser + "&userName=" + userName + "&adminId=" + adminId + "&adminName=" + adminName + "&adminToken=" + adminToken)
         .then(res => res.json())
         .then(
             (result) => {
@@ -36,9 +48,6 @@ function addBalance(amout, idUser, userName, adminId, adminName, adminCookie) {
                     items: result.items
                 });
             },
-            // Note: it's important to handle errors here
-            // instead of a catch() block so that we don't swallow
-            // exceptions from actual bugs in components.
             (error) => {
                 this.setState({
                     isLoaded: true,
@@ -57,12 +66,16 @@ class LoadUserTable extends React.Component {
         this.state = {
             error: null,
             isLoaded: false,
-            items: []
+            items: [],
+            currentPage: 1,
+            adminId: Cookies.get('adminId'),
+            adminName: Cookies.get('adminName'),
+            adminToken: Cookies.get('adminToken'),
         };
     }
 
     componentDidMount() {
-        fetch("/users")
+        fetch("/users?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + this.state.currentPage)
             .then(res => res.json())
             .then(
                 (result) => {
@@ -82,8 +95,35 @@ class LoadUserTable extends React.Component {
                 }
             )
     }
-
     render() {
+        store.subscribe(() => {
+            if (store.getState().status == true) {
+                var cpage = store.getState();
+                store.dispatch({ type: 'FALSE', value: null });
+                console.log("da nhan " + cpage.value)
+                this.setState({
+                    currentPage: cpage.value
+                })
+                fetch("/users?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + cpage.value)
+                .then(res => res.json())
+                .then(
+                    (result) => {
+                        this.setState({
+                            isLoaded: true,
+                            items: result
+                        });
+                    },
+                    (error) => {
+                        this.setState({
+                            isLoaded: true,
+                            error
+                        });
+                    }
+                )
+
+            }
+        }
+        );
         const { error, isLoaded, items } = this.state;
         if (error) {
             return <div>Error: {error.message}</div>;
@@ -105,11 +145,15 @@ class Pagination extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            maxPage: 50,
+            maxPage: 0,
             currentGroupPage: 0,
+            adminId: Cookies.get('adminId'),
+            adminName: Cookies.get('adminName'),
+            adminToken: Cookies.get('adminToken'),
         };
         this.PreviousPage = this.PreviousPage.bind(this);
         this.NextPage = this.NextPage.bind(this);
+        this.handleChange = this.handleChange.bind(this);
     }
     PreviousPage() {
         this.setState({
@@ -122,20 +166,47 @@ class Pagination extends React.Component {
         })
     }
 
-    render() {
+    handleChange(event) {
+        const target = event.target;
+        const name = target.name;
+        console.log(name);
+        store.dispatch({ type: 'VALUE', value: name });
+    }
 
+    componentDidMount() {
+        fetch("/usersCountPage?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken)
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    if (result.status == "OK") {
+                        this.setState({
+                            maxPage: result.pageCount
+                        });
+                    }
+                },
+                (error) => {
+                    this.setState({
+                        isLoaded: true,
+                        error
+                    });
+                }
+            )
+
+    }
+
+    render() {
         var maxGroupPage = this.state.maxPage / 5;
-        console.log(this.state.currentGroupPage+"_"+maxGroupPage);
+        console.log(this.state.currentGroupPage + "_" + maxGroupPage);
         var indents = [];
-         if (this.state.currentGroupPage > 0)
+        if (this.state.currentGroupPage > 0)
             indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.PreviousPage}>Previous</a></li>);
         for (var i = 1; i <= 5; i++) {
             var iexport = i + this.state.currentGroupPage * 5;
             if (iexport <= this.state.maxPage)
-                indents.push(<li class="page-item"><a class="page-link" href="#">{iexport}</a></li>);
+                indents.push(<li class="page-item"><a class="page-link" href="#" name={iexport} onClick={this.handleChange}>{iexport}</a></li>);
         }
-         if(this.state.currentGroupPage <maxGroupPage-1)
-        indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.NextPage}>Next</a></li>);
+        if (this.state.currentGroupPage < maxGroupPage - 1)
+            indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.NextPage}>Next</a></li>);
         return (
             <nav aria-label="Page navigation example">
                 <ul class="pagination justify-content-center">
@@ -270,7 +341,7 @@ class Person extends React.Component {
                     <th>{this.props.email}</th>
                     <th>{this.props.phone}</th>
                     <th>{this.props.fullname}</th>
-                    <th>{this.props.balance}</th>
+                    <th><CurrencyFormat value={this.props.balance} displayType={'text'} thousandSeparator={true} /></th>
                     <th>{this.props.status}</th>
                     <th>{this.props.lastactive}</th>
                     <th>
