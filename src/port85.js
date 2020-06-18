@@ -38,7 +38,7 @@ var conn = mysql.createConnection({
 conn.connect(function (err) {
     if (err) throw err;
     console.log("Connected!");
-    conn.query("CREATE TABLE accounts ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, username VARCHAR(15), password VARCHAR(16),email VARCHAR(100),phone VARCHAR(100), fullname NVARCHAR(50),token VARCHAR(32),currentBalance VARCHAR(10),dateTimeCreated DATETIME,status VARCHAR(1));", function (err, result, fields) {
+    conn.query("CREATE TABLE accounts ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, username VARCHAR(15), password VARCHAR(32),email VARCHAR(100),phone VARCHAR(100), fullname NVARCHAR(50),token VARCHAR(32),currentBalance VARCHAR(10),dateTimeCreated DATETIME,status VARCHAR(1));", function (err, result, fields) {
         if (!err)
             console.log("Create table success !");
         if (err)
@@ -75,7 +75,7 @@ app.get('/login', function (req, res) {
     var user_name = req.param('username');
     var user_password = req.param('password');
     console.log('Check login ' + user_name);
-    conn.query("SELECT id,fullname FROM accounts WHERE username = '" + user_name + "' AND password='" + user_password + "';", function (err, result, fields) {
+    conn.query("SELECT id,fullname FROM accounts WHERE username = '" + user_name + "' AND password='" + crypto.createHash('sha256').update(user_password).digest('base64') + "';", function (err, result, fields) {
         if (err) throw err;
         console.log(' ' + result.length);
         if (result.length > 0) {
@@ -225,7 +225,7 @@ app.get('/register', function (req, res) {
             res.send(JSON.stringify(obj));
         } else if (result.length == 0) {
             if (user_password.length > 7 && user_password.length < 20) {
-                conn.query("INSERT INTO accounts (username,password,fullname,dateTimeCreated) VALUES ('" + user_name + "','" + user_password + "','" + user_fullname + "','" + dateTimeCreated + "');", function (err, result, fields) {
+                conn.query("INSERT INTO accounts (username,password,fullname,dateTimeCreated) VALUES ('" + user_name + "','" + crypto.createHash('sha256').update(user_password).digest('base64') + "','" + user_fullname + "','" + dateTimeCreated + "');", function (err, result, fields) {
                     if (err) throw err;
                     // var id_logs = result.insertId.toString();
                     // var obj1 = {
@@ -789,7 +789,7 @@ app.get('/users', async function (req, res) {
     var rowStart = ((page - 1) * maxRowInPage);
     console.log(rowStart + "," + maxRowInPage);
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
-        conn.query("SELECT id,username,email,phone,fullname,currentBalance,datetimeCreated FROM accounts LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
+        conn.query("SELECT id,username,email,phone,fullname,currentBalance,datetimeCreated,status FROM accounts LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
             if (err) throw err;
             var objectList = [];
             var i = 0;
@@ -803,6 +803,7 @@ app.get('/users', async function (req, res) {
                         fullname: result[i].fullname,
                         balance: result[i].currentBalance,
                         datetimeCreated: dateFormat(result[i].datetimeCreated, "yyyy-mm-dd HH:MM:ss"),
+                        status: result[i].status,
                     }
                 )
                 i++;
@@ -849,8 +850,8 @@ app.get('/setUserPermission', async function (req, res) {
     } else if (userPermission == "1") {
         userPermissionText = "permissionBanned";
     }
-    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken,userPermissionText)) {
-        conn.query("UPDATE accounts SET status='"+userPermission+"' WHERE username='"+userName+"' AND id="+idUser+";", async function (err, result, fields) {
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, userPermissionText)) {
+        conn.query("UPDATE accounts SET status='" + userPermission + "' WHERE username='" + userName + "' AND id=" + idUser + ";", async function (err, result, fields) {
             if (err) throw err;
             var obj = {
                 status: "OK",
@@ -858,8 +859,8 @@ app.get('/setUserPermission', async function (req, res) {
             }
             console.log(JSON.stringify(obj));
             res.send(JSON.stringify(obj));
-    });
-    }else{
+        });
+    } else {
         var obj = {
             status: "ERROR",
             message: "Chứng thực thất bại"
@@ -877,21 +878,21 @@ app.get('/addBalance', async function (req, res) {
     var adminId = req.param('adminId');
     var adminName = req.param('adminName');
     var adminToken = req.param('adminToken');
-    var amountInt=Number(amount);
+    var amountInt = Number(amount);
     console.log(idUser);
     var permissionText = null;
-    if (amountInt>0) {
+    if (amountInt > 0) {
         permissionText = "permissionAddMoney";
-    } else if (amountInt<0) {
+    } else if (amountInt < 0) {
         permissionText = "permissionDeductMoney";
     }
-    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken,permissionText)) {
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, permissionText)) {
         conn.query("SELECT currentBalance FROM accounts WHERE id = '" + idUser + "' AND userName = '" + userName + "';", function (err, result, fields) {
             if (err) throw err;
-            if(result.length > 0){
+            if (result.length > 0) {
                 var currentBalance = Number(result[0].currentBalance);
-                var amountAdd=currentBalance+amountInt;
-                conn.query("UPDATE accounts SET currentBalance='"+amountAdd+"' WHERE username='"+userName+"' AND id="+idUser+";", async function (err, result, fields) {
+                var amountAdd = currentBalance + amountInt;
+                conn.query("UPDATE accounts SET currentBalance='" + amountAdd + "' WHERE username='" + userName + "' AND id=" + idUser + ";", async function (err, result, fields) {
                     if (err) throw err;
                     var obj = {
                         status: "OK",
@@ -899,11 +900,11 @@ app.get('/addBalance', async function (req, res) {
                     }
                     console.log(JSON.stringify(obj));
                     res.send(JSON.stringify(obj));
-            });
-        
+                });
+
             }
         });
-    }else{
+    } else {
         var obj = {
             status: "ERROR",
             message: "Chứng thực thất bại"
@@ -913,6 +914,76 @@ app.get('/addBalance', async function (req, res) {
 
     }
 });
+
+app.get('/adminLoadMarket', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var page = req.param('page');
+    var rowStart = ((page - 1) * maxRowInPage);
+    console.log(rowStart + "," + maxRowInPage);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT * FROM tripspending LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
+            if (err) throw err;
+            var tripspending = result;
+            var objListExport=[];
+            for(var a=0;a<tripspending.length;a++){
+                var obj=tripspending[a];
+                obj.tripStatus=0;
+                if(tripspending[a].approved==true || tripspending[a].approved=="true"){
+                    var markettrip = await GetFromMarket1(tripspending[a]);
+                    obj=markettrip;
+                    obj.tripStatus=1;
+                    console.log(JSON.stringify(obj));
+                }
+                obj.departureTime= dateFormat(obj.departureTime, "yyyy-mm-dd HH:MM:ss");
+                objListExport.push(obj);
+            }
+            console.log(JSON.stringify(objListExport));
+            res.send(JSON.stringify(objListExport));
+
+        });
+
+
+    }
+});
+
+async function GetFromMarket1(obj2) {
+    return new Promise(function (resolve, reject) {
+        console.log(obj2);
+        var markettrip=null;
+        conn.query("SELECT * FROM markettrips WHERE tripCode='" + obj2.tripCode + "';", function (err, result1, fields) {
+            if (err) throw err;
+            if (result1.length > 0) {
+                markettrip=result1[0];
+            }
+            console.log(JSON.stringify(markettrip))
+            return resolve(markettrip);
+        });
+    })
+}
+
+app.get('/marketCountPage', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    //console.log(rowStart + "," + maxRowInPage);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT COUNT(*) AS pageCount FROM tripspending;", async function (err, result, fields) {
+            if (err) throw err;
+            if (result.length > 0) {
+                var obj =
+                {
+                    status: "OK",
+                    pageCount: (result[0].pageCount / maxRowInPage)
+                }
+                console.log(obj);
+                res.send(JSON.stringify(obj));
+            }
+        });
+    }
+});
+
 
 var htmlPath = path.join(__dirname, 'firstreact/build');
 

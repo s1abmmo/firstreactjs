@@ -2,7 +2,7 @@ import React from 'react';
 //import logo from './logo.svg';
 import './App.css';
 import Cookies from 'js-cookie';
-//import UserTable from './User';
+import UserTable from './User';
 
 function AdminLogin(adminName, adminPassword) {
     fetch("/adminLogin?adminName=" + adminName + "&adminPassword=" + adminPassword)
@@ -14,6 +14,7 @@ function AdminLogin(adminName, adminPassword) {
                     Cookies.set('adminId', result.adminId, { path: '/' });
                     Cookies.set('adminName', result.adminName, { path: '/' });
                     Cookies.set('adminToken', result.adminToken, { path: '/' });
+                    window.location.reload();
                 }
             },
             (error) => {

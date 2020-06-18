@@ -5,10 +5,30 @@ import Cookies from 'js-cookie';
 import { createStore } from 'redux'
 import CurrencyFormat from 'react-currency-format';
 
+// var initialState = {
+//     status: false,
+//     objlist: []
+// }
+// function usertable(state = initialState, action, value) {
+//     if (action.type === 'INPUT') {
+//         let newState = { ...state }
+//         newState.status = true;
+//         newState.objlist = action.objectlist;
+//         return newState;
+//     } else if (action.type === 'RECEIVED') {
+//         let newState = { ...state }
+//         newState.status = false;
+//         return newState;
+//     }
+//     return state.objlist;
+// }
+
 function counter(state = { value: 1, status: false }, action, value) {
     switch (action.type) {
         case 'VALUE':
             return state = { value: action.value, status: true };
+        case 'TRUE':
+            return state = { value: state.value, status: true };
         case 'FALSE':
             return state = { value: state.value, status: false };
         default:
@@ -17,22 +37,18 @@ function counter(state = { value: 1, status: false }, action, value) {
 }
 
 let store = createStore(counter);
+// let store1 = createStore(usertable);
 
 function setUserPermission(userPermission, idUser, userName, adminId, adminName, adminToken) {
     fetch("/setUserPermission?userPermission=" + userPermission + "&idUser=" + idUser + "&userName=" + userName + "&adminId=" + adminId + "&adminName=" + adminName + "&adminToken=" + adminToken)
         .then(res => res.json())
         .then(
             (result) => {
-                this.setState({
-                    isLoaded: true,
-                    items: result.items
-                });
+                store.dispatch({ type: 'TRUE' });
+                console.log(store.getState());
             },
             (error) => {
-                this.setState({
-                    isLoaded: true,
-                    error
-                });
+                console.log(error.message);
             }
         )
 }
@@ -43,16 +59,11 @@ function addBalance(amout, idUser, userName, adminId, adminName, adminToken) {
         .then(res => res.json())
         .then(
             (result) => {
-                this.setState({
-                    isLoaded: true,
-                    items: result.items
-                });
+                store.dispatch({ type: 'TRUE' });
+                console.log(store.getState());
             },
             (error) => {
-                this.setState({
-                    isLoaded: true,
-                    error
-                });
+                console.log(error.message);
             }
         )
 }
@@ -105,21 +116,21 @@ class LoadUserTable extends React.Component {
                     currentPage: cpage.value
                 })
                 fetch("/users?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + cpage.value)
-                .then(res => res.json())
-                .then(
-                    (result) => {
-                        this.setState({
-                            isLoaded: true,
-                            items: result
-                        });
-                    },
-                    (error) => {
-                        this.setState({
-                            isLoaded: true,
-                            error
-                        });
-                    }
-                )
+                    .then(res => res.json())
+                    .then(
+                        (result) => {
+                            this.setState({
+                                isLoaded: true,
+                                items: result
+                            });
+                        },
+                        (error) => {
+                            this.setState({
+                                isLoaded: true,
+                                error
+                            });
+                        }
+                    )
 
             }
         }
@@ -133,7 +144,7 @@ class LoadUserTable extends React.Component {
             return (
                 <tbody>
                     {items.map(item => (
-                        <Person id={item.id} username={item.username} email={item.email} phone={item.phone} fullname={item.fullname} balance={item.balance} datetimeCreated={item.datetimeCreated} />
+                        <Person id={item.id} username={item.username} email={item.email} phone={item.phone} fullname={item.fullname} balance={item.balance} status={item.status} datetimeCreated={item.datetimeCreated} />
                     ))}
                 </tbody>
             );
@@ -324,7 +335,6 @@ class Person extends React.Component {
         };
         console.log(this.state.adminId);
     }
-
     render() {
         let b = ".hide" + this.props.id;
         let a = "collapse hide" + this.props.id;
@@ -332,6 +342,9 @@ class Person extends React.Component {
         let addt = ".add" + this.props.id;
         let deduct = "collapse deduct" + this.props.id;
         let deductt = ".deduct" + this.props.id;
+        let propstatus= this.props.status=="0" ? "Not actived" : "";
+        propstatus= this.props.status=="1" ? "Actived" : propstatus;
+        propstatus= this.props.status=="2" ? "Banned" : propstatus;
         return (
             <>
 
@@ -342,13 +355,13 @@ class Person extends React.Component {
                     <th>{this.props.phone}</th>
                     <th>{this.props.fullname}</th>
                     <th><CurrencyFormat value={this.props.balance} displayType={'text'} thousandSeparator={true} /></th>
-                    <th>{this.props.status}</th>
+                    <th>{propstatus}</th>
                     <th>{this.props.lastactive}</th>
                     <th>
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Action
-    </button>
+                                </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                 <a class="dropdown-item" href="#" onClick={() => setUserPermission(1, this.props.id, this.props.username, this.state.adminId, this.state.adminName, this.state.adminToken)}>Active</a>
                                 <a class="dropdown-item" href="#" onClick={() => setUserPermission(2, this.props.id, this.props.username, this.state.adminId, this.state.adminName, this.state.adminToken)}>Banned</a>

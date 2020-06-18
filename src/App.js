@@ -4,6 +4,7 @@ import './App.css';
 import Cookies from 'js-cookie';
 import UserTable from './User';
 import SigninPage from './SigninPage';
+import Market from './Market';
 
 class UserPage extends React.Component {
   constructor(props) {
@@ -28,7 +29,7 @@ class UserPage extends React.Component {
   Market() {
     this.state.indexClass=1;
     this.setState({
-      content: <UserTable />
+      content: <Market />
     })
   }
   Cars() {
