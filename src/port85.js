@@ -932,6 +932,7 @@ app.get('/adminLoadMarket', async function (req, res) {
                 obj.tripStatus=0;
                 if(tripspending[a].approved==true || tripspending[a].approved=="true"){
                     var markettrip = await GetFromMarket1(tripspending[a]);
+                    markettrip.tripId=obj.tripId;
                     obj=markettrip;
                     obj.tripStatus=1;
                     console.log(JSON.stringify(obj));
@@ -984,6 +985,41 @@ app.get('/marketCountPage', async function (req, res) {
     }
 });
 
+app.get('/adminLoadTripInfomation', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var tripCode = req.param('tripCode');
+    console.log(tripCode);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT * FROM tripspending WHERE tripCode='" + tripCode + "';", async function (err, result, fields) {
+            if (err) throw err;
+
+            if(result.length>0){
+                var obj=result[0];
+                conn.query("SELECT * FROM markettrips WHERE tripCode='" + tripCode + "';", async function (err, result, fields) {
+                    if (err) throw err;
+                    if(result.length>0){
+                        var obj1=result[0];
+                        obj1.tripId=obj.tripId;
+                        // obj1.departureTime=dateFormat(obj1.departureTime, "yyyy-mm-dd")+"T"+dateFormat(obj1.departureTime, "HH:MM");
+                        // obj1.timeOpenOnMarket=dateFormat(obj1.timeOpenOnMarket, "yyyy-mm-dd")+"T"+dateFormat(obj1.timeOpenOnMarket, "HH:MM");
+                        // obj1.dateTimePosted=dateFormat(obj1.dateTimePosted, "yyyy-mm-dd")+"T"+dateFormat(obj1.dateTimePosted, "HH:MM");
+
+                        console.log(JSON.stringify(obj1));
+                        res.send(JSON.stringify(obj1));                   
+                    }else{
+                        // obj.departureTime=dateFormat(obj.departureTime, "yyyy-mm-dd")+"T"+dateFormat(obj.departureTime, "HH:MM");
+                        // obj.timeOpenOnMarket=dateFormat(obj.timeOpenOnMarket, "yyyy-mm-dd")+"T"+dateFormat(obj.timeOpenOnMarket, "HH:MM");
+                        // obj.dateTimePosted=dateFormat(obj.dateTimePosted, "yyyy-mm-dd")+"T"+dateFormat(obj.dateTimePosted, "HH:MM");
+                        console.log(JSON.stringify(obj));
+                        res.send(JSON.stringify(obj));                   
+                    }
+                });
+            }
+        });
+    }
+});
 
 var htmlPath = path.join(__dirname, 'firstreact/build');
 
