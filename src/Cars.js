@@ -47,7 +47,7 @@ function statusmarket(state = initialState, action) {
 
 let store = createStore(statusmarket);
 
-class LoadMarket extends React.Component {
+class LoadCars extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -62,7 +62,7 @@ class LoadMarket extends React.Component {
     }
 
     componentDidMount() {
-        fetch("/adminLoadMarket?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + this.state.currentPage)
+        fetch("/adminLoadCars?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + this.state.currentPage)
             .then(res => res.json())
             .then(
                 (result) => {
@@ -88,7 +88,7 @@ class LoadMarket extends React.Component {
                 this.setState({
                     currentPage: cpage.value
                 })
-                fetch("/adminLoadMarket?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + cpage.value)
+                fetch("/adminLoadCars?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + cpage.value)
                     .then(res => res.json())
                     .then(
                         (result) => {
@@ -117,7 +117,7 @@ class LoadMarket extends React.Component {
             return (
                 <tbody>
                     {items.map(item => (
-                        <Trip tripId={item.tripId} tripCode={item.tripCode} tripFrom={item.tripFrom} tripTo={item.tripTo} departureTime={item.departureTime} priceStart={item.priceStart} priceToBuyNow={item.priceToBuyNow} priceBidCurrent={item.priceBidCurrent} tripStatus={item.tripStatus} />
+                        <Car tripId={item.tripId} tripCode={item.tripCode} tripFrom={item.tripFrom} tripTo={item.tripTo} departureTime={item.departureTime} priceStart={item.priceStart} priceToBuyNow={item.priceToBuyNow} priceBidCurrent={item.priceBidCurrent} tripStatus={item.tripStatus} />
                     ))}
                 </tbody>
             );
@@ -126,7 +126,7 @@ class LoadMarket extends React.Component {
 }
 
 
-export default class Market extends React.Component {
+export default class Cars extends React.Component {
     render() {
         return (
             <>
@@ -134,19 +134,16 @@ export default class Market extends React.Component {
                     <thead className="thead-dark">
                         <tr>
                             <th scope="col">Id</th>
-                            <th scope="col">Trip Code</th>
-                            <th scope="col">Trip From</th>
-                            <th scope="col">Trip To</th>
-                            <th scope="col">Departure Time</th>
-                            <th scope="col">Price Start</th>
-                            <th scope="col">Price To Buy Now</th>
-                            <th scope="col">Price Current Bid</th>
-                            <th scope="col">Trip Status</th>
+                            <th scope="col">CarIsName</th>
+                            <th scope="col">License Plate</th>
+                            <th scope="col">Seat</th>
+                            <th scope="col">YearOfManufacture</th>
+                            <th scope="col">Status</th>
                             <th scope="col">Action</th>
                             <th scope="col">More</th>
                         </tr>
                     </thead>
-                    <LoadMarket />
+                    <LoadCars />
                     <Modal />
                 </table>
                 <Pagination />
@@ -155,7 +152,7 @@ export default class Market extends React.Component {
     }
 }
 
-class Trip extends React.Component {
+class Car extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -171,31 +168,19 @@ class Trip extends React.Component {
     }
     MoreClick() {
         console.log(this.props.tripCode);
-        store.dispatch({ type: 'UPDATETRIPCODE', tripCode: this.props.tripCode });
+        store.dispatch({ type: 'UPDATETRIPCODE', tripCode: this.props.id });
     };
     render() {
-        // let b = ".hide" + this.props.id;
-        // let a = "collapse hide" + this.props.id;
-        // let add = "collapse add" + this.props.id;
-        // let addt = ".add" + this.props.id;
-        // let deduct = "collapse deduct" + this.props.id;
-        // let deductt = ".deduct" + this.props.id;
-        // let propstatus= this.props.status=="0" ? "Not actived" : "";
-        // propstatus= this.props.status=="1" ? "Actived" : propstatus;
-        // propstatus= this.props.status=="2" ? "Banned" : propstatus;
         return (
             <>
 
                 <tr>
-                    <th scope="row">{this.props.tripId}</th>
-                    <th>{this.props.tripCode}</th>
-                    <th>{this.props.tripFrom}</th>
-                    <th>{this.props.tripTo}</th>
-                    <th>{new Date(this.props.departureTime).toLocaleDateString("vi-VN",{year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'})}</th>
-                    <th>{this.props.priceStart}</th>
-                    <th>{this.props.priceToBuyNow}</th>
-                    <th>{this.props.priceBidCurrent}</th>
-                    <th>{this.props.tripStatus}</th>
+                    <th scope="row">{this.props.carId}</th>
+                    <th>{this.props.carIsName}</th>
+                    <th>{this.props.licensePlate}</th>
+                    <th>{this.props.seat}</th>
+                    <th>{this.props.yearOfManufacture}</th>
+                    <th>{this.props.status}</th>
                     <th>
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -216,81 +201,6 @@ class Trip extends React.Component {
     }
 }
 
-
-class Pagination extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            maxPage: 0,
-            currentGroupPage: 0,
-            adminId: Cookies.get('adminId'),
-            adminName: Cookies.get('adminName'),
-            adminToken: Cookies.get('adminToken'),
-        };
-        this.PreviousPage = this.PreviousPage.bind(this);
-        this.NextPage = this.NextPage.bind(this);
-        this.handleChange = this.handleChange.bind(this);
-    }
-    PreviousPage() {
-        this.setState({
-            currentGroupPage: this.state.currentGroupPage - 1
-        })
-    }
-    NextPage() {
-        this.setState({
-            currentGroupPage: this.state.currentGroupPage + 1
-        })
-    }
-
-    handleChange(event) {
-        const target = event.target;
-        const name = target.name;
-        console.log(name);
-        store.dispatch({ type: 'VALUE', value: name });
-    }
-
-    componentDidMount() {
-        fetch("/marketCountPage?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken)
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    if (result.status == "OK") {
-                        this.setState({
-                            maxPage: result.pageCount
-                        });
-                    }
-                },
-                (error) => {
-                    this.setState({
-                        isLoaded: true,
-                        error
-                    });
-                }
-            )
-
-    }
-
-    render() {
-        var maxGroupPage = this.state.maxPage / 5;
-        console.log(this.state.currentGroupPage + "_" + maxGroupPage);
-        var indents = [];
-        if (this.state.currentGroupPage > 0)
-            indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.PreviousPage}>Previous</a></li>);
-        for (var i = 1; i <= 5; i++) {
-            var iexport = i + this.state.currentGroupPage * 5;
-            if (iexport <= this.state.maxPage)
-                indents.push(<li class="page-item"><a class="page-link" href="#" name={iexport} onClick={this.handleChange}>{iexport}</a></li>);
-        }
-        if (this.state.currentGroupPage < maxGroupPage - 1)
-            indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.NextPage}>Next</a></li>);
-        return (
-            <nav aria-label="Page navigation example">
-                <ul class="pagination justify-content-center">
-                    {indents}
-                </ul>
-            </nav>);
-    }
-}
 class Modal extends React.Component {
     constructor(props) {
         super(props);
@@ -323,7 +233,7 @@ class Modal extends React.Component {
         setTimeout(
             function () {
                 if (this.state.tripCode != null) {
-                    fetch("/adminLoadTripInfomation?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&tripCode=" + this.state.tripCode)
+                    fetch("/adminLoadCars?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&tripCode=" + this.state.tripCode)
                         .then(res => res.json())
                         .then(
                             (result) => {
@@ -402,5 +312,81 @@ class Modal extends React.Component {
                 </div>
             </div>
         )
+    }
+}
+
+
+class Pagination extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            maxPage: 0,
+            currentGroupPage: 0,
+            adminId: Cookies.get('adminId'),
+            adminName: Cookies.get('adminName'),
+            adminToken: Cookies.get('adminToken'),
+        };
+        this.PreviousPage = this.PreviousPage.bind(this);
+        this.NextPage = this.NextPage.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+    }
+    PreviousPage() {
+        this.setState({
+            currentGroupPage: this.state.currentGroupPage - 1
+        })
+    }
+    NextPage() {
+        this.setState({
+            currentGroupPage: this.state.currentGroupPage + 1
+        })
+    }
+
+    handleChange(event) {
+        const target = event.target;
+        const name = target.name;
+        console.log(name);
+        store.dispatch({ type: 'VALUE', value: name });
+    }
+
+    componentDidMount() {
+        fetch("/carsCountPage?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken)
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    if (result.status == "OK") {
+                        this.setState({
+                            maxPage: result.pageCount
+                        });
+                    }
+                },
+                (error) => {
+                    this.setState({
+                        isLoaded: true,
+                        error
+                    });
+                }
+            )
+
+    }
+
+    render() {
+        var maxGroupPage = this.state.maxPage / 5;
+        console.log(this.state.currentGroupPage + "_" + maxGroupPage);
+        var indents = [];
+        if (this.state.currentGroupPage > 0)
+            indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.PreviousPage}>Previous</a></li>);
+        for (var i = 1; i <= 5; i++) {
+            var iexport = i + this.state.currentGroupPage * 5;
+            if (iexport <= this.state.maxPage)
+                indents.push(<li class="page-item"><a class="page-link" href="#" name={iexport} onClick={this.handleChange}>{iexport}</a></li>);
+        }
+        if (this.state.currentGroupPage < maxGroupPage - 1)
+            indents.push(<li class="page-item"><a class="page-link" href="#" onClick={this.NextPage}>Next</a></li>);
+        return (
+            <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+                    {indents}
+                </ul>
+            </nav>);
     }
 }

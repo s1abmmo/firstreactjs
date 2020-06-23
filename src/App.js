@@ -5,6 +5,8 @@ import Cookies from 'js-cookie';
 import UserTable from './User';
 import SigninPage from './SigninPage';
 import Market from './Market';
+import Cars from './Cars';
+import CreateCar from './CreateCar';
 
 class UserPage extends React.Component {
   constructor(props) {
@@ -18,6 +20,9 @@ class UserPage extends React.Component {
     this.Cars = this.Cars.bind(this);
     this.History = this.History.bind(this);
     this.CreateAccount = this.CreateAccount.bind(this);
+    this.CreateTrip = this.CreateTrip.bind(this);
+    this.CreateCar = this.CreateCar.bind(this);
+    this.SuperAdmin = this.SuperAdmin.bind(this);
     this.Logout = this.Logout.bind(this);
   }
   Users() {
@@ -35,7 +40,7 @@ class UserPage extends React.Component {
   Cars() {
     this.state.indexClass=2;
     this.setState({
-      content: <UserTable />
+      content: <Cars />
     })
   }
   History() {
@@ -50,11 +55,31 @@ class UserPage extends React.Component {
       content: <UserTable />
     })
   }
-  Logout() {
+  CreateTrip() {
     this.state.indexClass=5;
     this.setState({
       content: <UserTable />
     })
+  }
+  CreateCar() {
+    this.state.indexClass=6;
+    this.setState({
+      content: <CreateCar />
+    })
+  }
+  SuperAdmin() {
+    this.state.indexClass=7;
+    this.setState({
+      content: <UserTable />
+    })
+  }
+  Logout() {
+    this.state.indexClass=8;
+    Cookies.set('adminToken', "", { path: '/' });
+    window.location.reload();
+    // this.setState({
+    //   content: <UserTable />
+    // })
   }
   render() {
     return (
@@ -68,7 +93,10 @@ class UserPage extends React.Component {
                 <a className={this.state.indexClass==2 ? "list-group-item list-group-item-action bg-dark text-light" : "list-group-item list-group-item-action bg-light"} onClick={this.Cars}>Car</a>
                 <a className={this.state.indexClass==3 ? "list-group-item list-group-item-action bg-dark text-light" : "list-group-item list-group-item-action bg-light"} onClick={this.History}>History</a>
                 <a className={this.state.indexClass==4 ? "list-group-item list-group-item-action bg-dark text-light" : "list-group-item list-group-item-action bg-light"} onClick={this.CreateAccount}>Create Account</a>
-                <a className={this.state.indexClass==5 ? "list-group-item list-group-item-action bg-dark text-light" : "list-group-item list-group-item-action bg-light"} onClick={this.Logout}>Logout</a>
+                <a className={this.state.indexClass==5 ? "list-group-item list-group-item-action bg-dark text-light" : "list-group-item list-group-item-action bg-light"} onClick={this.CreateTrip}>Create Trip</a>
+                <a className={this.state.indexClass==6 ? "list-group-item list-group-item-action bg-dark text-light" : "list-group-item list-group-item-action bg-light"} onClick={this.CreateCar}>Create Car</a>
+                <a className={this.state.indexClass==7 ? "list-group-item list-group-item-action bg-dark text-light" : "list-group-item list-group-item-action bg-light"} onClick={this.SuperAdmin}>Super Admin</a>
+                <a className={this.state.indexClass==8 ? "list-group-item list-group-item-action bg-dark text-light" : "list-group-item list-group-item-action bg-light"} onClick={this.Logout}>Logout</a>
               </div>
             </nav>
           </div>

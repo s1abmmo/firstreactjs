@@ -7,6 +7,8 @@ var mysql = require('mysql');
 var dateFormat = require('dateformat');
 var path = require('path');
 var crypto = require('crypto');
+var multer = require('multer');
+var fs = require('fs');
 
 function generate_token(length) {
     //edit the token allowed characters
@@ -38,7 +40,7 @@ var conn = mysql.createConnection({
 conn.connect(function (err) {
     if (err) throw err;
     console.log("Connected!");
-    conn.query("CREATE TABLE accounts ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, username VARCHAR(15), password VARCHAR(32),email VARCHAR(100),phone VARCHAR(100), fullname NVARCHAR(50),token VARCHAR(32),currentBalance VARCHAR(10),dateTimeCreated DATETIME,status VARCHAR(1));", function (err, result, fields) {
+    conn.query("CREATE TABLE accounts ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, username VARCHAR(15), password VARCHAR(100),email VARCHAR(100),phone VARCHAR(100), fullname NVARCHAR(50),token VARCHAR(32),currentBalance VARCHAR(10),dateTimeCreated DATETIME,status VARCHAR(1));", function (err, result, fields) {
         if (!err)
             console.log("Create table success !");
         if (err)
@@ -68,7 +70,12 @@ conn.connect(function (err) {
         if (err)
             console.log(err.message)
     });
-
+    conn.query("CREATE TABLE cars ( id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, carIsName VARCHAR(100),licensePlate NVARCHAR(20),seat VARCHAR(2),yearOfManufacture VARCHAR(4),status VARCHAR(1),photoLinkRegistrationCar VARCHAR(1000),photoLinkRegistryCar VARCHAR(1000),photoLinkInsuranceCar VARCHAR(1000),photoLinkLeftCar VARCHAR(1000),photoLinkRightCar VARCHAR(1000),photoLinkFrontCar VARCHAR(1000),photoLinkBehindCar VARCHAR(1000),photoLinkDriverIsLicense VARCHAR(1000),photoLinkIdentityCard VARCHAR(1000),dateTimePosted DATETIME);", function (err, result, fields) {
+        if (!err)
+            console.log("Create table cars success !");
+        if (err)
+            console.log(err.message)
+    });
 });
 
 app.get('/login', function (req, res) {
@@ -225,7 +232,7 @@ app.get('/register', function (req, res) {
             res.send(JSON.stringify(obj));
         } else if (result.length == 0) {
             if (user_password.length > 7 && user_password.length < 20) {
-                conn.query("INSERT INTO accounts (username,password,fullname,dateTimeCreated) VALUES ('" + user_name + "','" + crypto.createHash('sha256').update(user_password).digest('base64') + "','" + user_fullname + "','" + dateTimeCreated + "');", function (err, result, fields) {
+                conn.query("INSERT INTO accounts (username,password,fullname,dateTimeCreated,currentBalance) VALUES ('" + user_name + "','" + crypto.createHash('sha256').update(user_password).digest('base64') + "','" + user_fullname + "','" + dateTimeCreated + "','0');", function (err, result, fields) {
                     if (err) throw err;
                     // var id_logs = result.insertId.toString();
                     // var obj1 = {
@@ -926,18 +933,18 @@ app.get('/adminLoadMarket', async function (req, res) {
         conn.query("SELECT * FROM tripspending LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
             if (err) throw err;
             var tripspending = result;
-            var objListExport=[];
-            for(var a=0;a<tripspending.length;a++){
-                var obj=tripspending[a];
-                obj.tripStatus=0;
-                if(tripspending[a].approved==true || tripspending[a].approved=="true"){
+            var objListExport = [];
+            for (var a = 0; a < tripspending.length; a++) {
+                var obj = tripspending[a];
+                obj.tripStatus = 0;
+                if (tripspending[a].approved == true || tripspending[a].approved == "true") {
                     var markettrip = await GetFromMarket1(tripspending[a]);
-                    markettrip.tripId=obj.tripId;
-                    obj=markettrip;
-                    obj.tripStatus=1;
+                    markettrip.tripId = obj.tripId;
+                    obj = markettrip;
+                    obj.tripStatus = 1;
                     console.log(JSON.stringify(obj));
                 }
-                obj.departureTime= dateFormat(obj.departureTime, "yyyy-mm-dd HH:MM:ss");
+                obj.departureTime = dateFormat(obj.departureTime, "yyyy-mm-dd HH:MM:ss");
                 objListExport.push(obj);
             }
             console.log(JSON.stringify(objListExport));
@@ -952,11 +959,11 @@ app.get('/adminLoadMarket', async function (req, res) {
 async function GetFromMarket1(obj2) {
     return new Promise(function (resolve, reject) {
         console.log(obj2);
-        var markettrip=null;
+        var markettrip = null;
         conn.query("SELECT * FROM markettrips WHERE tripCode='" + obj2.tripCode + "';", function (err, result1, fields) {
             if (err) throw err;
             if (result1.length > 0) {
-                markettrip=result1[0];
+                markettrip = result1[0];
             }
             console.log(JSON.stringify(markettrip))
             return resolve(markettrip);
@@ -995,31 +1002,92 @@ app.get('/adminLoadTripInfomation', async function (req, res) {
         conn.query("SELECT * FROM tripspending WHERE tripCode='" + tripCode + "';", async function (err, result, fields) {
             if (err) throw err;
 
-            if(result.length>0){
-                var obj=result[0];
+            if (result.length > 0) {
+                var obj = result[0];
                 conn.query("SELECT * FROM markettrips WHERE tripCode='" + tripCode + "';", async function (err, result, fields) {
                     if (err) throw err;
-                    if(result.length>0){
-                        var obj1=result[0];
-                        obj1.tripId=obj.tripId;
+                    if (result.length > 0) {
+                        var obj1 = result[0];
+                        obj1.tripId = obj.tripId;
                         // obj1.departureTime=dateFormat(obj1.departureTime, "yyyy-mm-dd")+"T"+dateFormat(obj1.departureTime, "HH:MM");
                         // obj1.timeOpenOnMarket=dateFormat(obj1.timeOpenOnMarket, "yyyy-mm-dd")+"T"+dateFormat(obj1.timeOpenOnMarket, "HH:MM");
                         // obj1.dateTimePosted=dateFormat(obj1.dateTimePosted, "yyyy-mm-dd")+"T"+dateFormat(obj1.dateTimePosted, "HH:MM");
 
                         console.log(JSON.stringify(obj1));
-                        res.send(JSON.stringify(obj1));                   
-                    }else{
+                        res.send(JSON.stringify(obj1));
+                    } else {
                         // obj.departureTime=dateFormat(obj.departureTime, "yyyy-mm-dd")+"T"+dateFormat(obj.departureTime, "HH:MM");
                         // obj.timeOpenOnMarket=dateFormat(obj.timeOpenOnMarket, "yyyy-mm-dd")+"T"+dateFormat(obj.timeOpenOnMarket, "HH:MM");
                         // obj.dateTimePosted=dateFormat(obj.dateTimePosted, "yyyy-mm-dd")+"T"+dateFormat(obj.dateTimePosted, "HH:MM");
                         console.log(JSON.stringify(obj));
-                        res.send(JSON.stringify(obj));                   
+                        res.send(JSON.stringify(obj));
                     }
                 });
             }
         });
     }
 });
+
+app.get('/adminLoadCars', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var page = req.param('page');
+    var rowStart = ((page - 1) * maxRowInPage);
+    console.log(rowStart + "," + maxRowInPage);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT * FROM cars LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
+            if (err) throw err;
+            var objList = [];
+            for (var a = 0; a < result.length; a++) {
+                var obj = result[a];
+                obj.dateTimePosted = dateFormat(result.dateTimePosted, "yyyy-mm-dd HH:MM:ss");
+                objList.push(obj);
+            }
+            console.log(JSON.stringify(objList));
+            res.send(JSON.stringify(objList));
+        });
+    }
+});
+
+app.get('/carsCountPage', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    //console.log(rowStart + "," + maxRowInPage);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT COUNT(*) AS pageCount FROM cars;", async function (err, result, fields) {
+            if (err) throw err;
+            if (result.length > 0) {
+                var obj =
+                {
+                    status: "OK",
+                    pageCount: (result[0].pageCount / maxRowInPage)
+                }
+                console.log(obj);
+                res.send(JSON.stringify(obj));
+            }
+        });
+    }
+});
+
+
+const imageUploader = multer({ dest: 'images/' });
+
+app.post('/upload', imageUploader.single('myFile'), (req, res) => {
+    const processedFile = req.file || {}; // MULTER xử lý và gắn đối tượng FILE vào req
+    let orgName = processedFile.originalname || ''; // Tên gốc trong máy tính của người upload
+    orgName = orgName.trim().replace(/ /g, "-")
+    const fullPathInServ = processedFile.path; // Đường dẫn đầy đủ của file vừa đc upload lên server
+    // Đổi tên của file vừa upload lên, vì multer đang đặt default ko có đuôi file
+    const newFullPath = `${fullPathInServ}-${orgName}`;
+    fs.renameSync(fullPathInServ, newFullPath);
+    res.send({
+        status: true,
+        message: 'file uploaded',
+        fileNameInServer: newFullPath
+    })
+})
 
 var htmlPath = path.join(__dirname, 'firstreact/build');
 
