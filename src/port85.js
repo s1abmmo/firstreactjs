@@ -1089,6 +1089,53 @@ app.post('/upload', imageUploader.single('myFile'), (req, res) => {
     })
 })
 
+var storage = multer.diskStorage({
+    destination: function (req, file, callback) {
+        callback(null, './upload');
+    },
+    filename: function (req, file, callback) {
+        console.log("it me"+req.param('adminId'));
+        callback(null, file.fieldname + '-' + Date.now());
+    }
+});
+
+var upload = multer({storage:storage}).fields([{ name: 'photoRegistration', maxCount: 1 }, { name: 'photoRegistry', maxCount: 1 }]);
+
+app.post('/photos', upload, function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    console.log(adminId + adminName + adminToken);
+    console.log("req body");
+    console.log(req.body);
+    console.log("req files");
+    console.log(req.files);
+    // if (err) {
+    //     return res.end("Error uploading file.");
+    // }
+    res.end("File is uploaded");
+});
+
+// var storage = multer.diskStorage({
+//     destination: function (req, file, callback) {
+//         callback(null, './upload');
+//     },
+//     filename: function (req, file, callback) {
+//         callback(null, file.fieldname + '-' );
+//     }
+// });
+// var upload = multer({ storage: storage }).fields([{ name: 'photoRegistration', maxCount: 1 }, { name: 'photoRegistry', maxCount: 1 }]);
+
+
+// app.post('/photos',upload, function (req, res) {
+//     var adminId = req.param('adminId');
+//     var adminName = req.param('adminName');
+//     var adminToken = req.param('adminToken');
+//     console.log(adminId + adminName + adminToken);
+//     res.end("File is uploaded");
+// });
+
+
 var htmlPath = path.join(__dirname, 'firstreact/build');
 
 app.use(express.static(htmlPath));
