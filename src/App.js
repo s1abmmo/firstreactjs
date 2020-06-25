@@ -7,6 +7,7 @@ import SigninPage from './SigninPage';
 import Market from './Market';
 import Cars from './Cars';
 import CreateCar from './CreateCar';
+import CreateUser from './CreateUser';
 
 class UserPage extends React.Component {
   constructor(props) {
@@ -52,7 +53,7 @@ class UserPage extends React.Component {
   CreateAccount() {
     this.state.indexClass=4;
     this.setState({
-      content: <UserTable />
+      content: <CreateUser />
     })
   }
   CreateTrip() {
@@ -101,7 +102,7 @@ class UserPage extends React.Component {
             </nav>
           </div>
 
-          <div className="col-auto">
+          <div className="col-8">
             {this.state.content}
           </div>
         </div>

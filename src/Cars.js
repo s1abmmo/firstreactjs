@@ -117,7 +117,7 @@ class LoadCars extends React.Component {
             return (
                 <tbody>
                     {items.map(item => (
-                        <Car tripId={item.tripId} tripCode={item.tripCode} tripFrom={item.tripFrom} tripTo={item.tripTo} departureTime={item.departureTime} priceStart={item.priceStart} priceToBuyNow={item.priceToBuyNow} priceBidCurrent={item.priceBidCurrent} tripStatus={item.tripStatus} />
+                        <Car id={item.id} carIsName={item.carIsName}  licensePlate={item.licensePlate} seat={item.seat} yearOfManufacture={item.yearOfManufacture} status={item.status}/>
                     ))}
                 </tbody>
             );

@@ -67,9 +67,9 @@ tr.collapse.in {
   font-weight: normal;
  }
 
-div.custom-file{
-   padding: 25px;
- }
+ img {
+  width: 100px;
+}
 
 /* @keyframes App-logo-spin {
   from {

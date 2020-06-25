@@ -1071,6 +1071,30 @@ app.get('/carsCountPage', async function (req, res) {
     }
 });
 
+app.post('/createCarInfomation', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var carIsName = req.param('carIsName');
+    var licensePlate = req.param('licensePlate');
+    var seat = req.param('seat');
+    var yearOfManuFacture = req.param('yearOfManuFacture');
+    var status = req.param('status');
+    var dateTimeCreated;
+    //console.log(rowStart + "," + maxRowInPage);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("INSERT INTO cars (carIsName,licensePlate,seat,yearOfManuFacture,status) VALUES ('" + carIsName + "','" + licensePlate + "','" + seat + "','" + yearOfManuFacture + "','" + status + "');", function (err, result, fields) {
+            if (err) throw err;
+            var obj = {
+                status: "OK",
+                message: "Thêm thông tin xe thành công",
+                idCar: result.insertId
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+    }
+});
 
 const imageUploader = multer({ dest: 'images/' });
 
@@ -1093,47 +1117,71 @@ var storage = multer.diskStorage({
     destination: function (req, file, callback) {
         callback(null, './upload');
     },
-    filename: function (req, file, callback) {
-        console.log("it me"+req.param('adminId'));
-        callback(null, file.fieldname + '-' + Date.now());
+    filename: async function (req, file, callback) {
+        if (await CheckAuthenticationAdmin(req.param('adminId'), req.param('adminName'), req.param('adminToken'), null)) {
+            callback(null, req.param('carId') + '-' + file.fieldname);
+
+        };
     }
 });
 
-var upload = multer({storage:storage}).fields([{ name: 'photoRegistration', maxCount: 1 }, { name: 'photoRegistry', maxCount: 1 }]);
+var upload = multer({ storage: storage }).fields([{ name: 'photoRegistration', maxCount: 1 }, { name: 'photoRegistry', maxCount: 1 }, { name: 'photoInsurance', maxCount: 1 }, { name: 'photoLeftCar', maxCount: 1 }, { name: 'photoRightCar', maxCount: 1 }, { name: 'photoFrontCar', maxCount: 1 }, { name: 'photoBehindCar', maxCount: 1 }, { name: 'photoDriverIsLicense', maxCount: 1 }, { name: 'photoIdentityCard', maxCount: 1 }]);
 
 app.post('/photos', upload, function (req, res) {
     var adminId = req.param('adminId');
     var adminName = req.param('adminName');
     var adminToken = req.param('adminToken');
-    console.log(adminId + adminName + adminToken);
-    console.log("req body");
+    var carId = req.param('carId');
+    console.log(adminId + "_" + adminName + "_" + adminToken);
     console.log(req.body);
-    console.log("req files");
     console.log(req.files);
-    // if (err) {
-    //     return res.end("Error uploading file.");
-    // }
-    res.end("File is uploaded");
+    var queryText="UPDATE cars SET photoLinkRegistrationCar='upload/" + carId + "-photoRegistration',photoLinkRegistryCar='upload/" + carId + "-photoRegistry',photoLinkInsuranceCar='upload/" + carId + "-photoInsurance',photoLinkLeftCar='upload/" + carId + "-photoLeftCar',photoLinkRightCar='upload/" + carId + "-photoRightCar',photoLinkFrontCar='upload/" + carId + "-photoFrontCar',photoLinkBehindCar='upload/" + carId + "-photoBehindCar',photoLinkDriverIsLicense='upload/" + carId + "-photoDriverIsLicense',photoLinkIdentityCard='upload/" + carId + "-photoIdentityCard' WHERE id=" + carId + ";";
+    console.log(queryText);
+    conn.query(queryText, async function (err, result, fields) {
+        if (err) throw err;
+        var obj = {
+            status: "OK",
+            message: "Upload success"
+        }
+        console.log(JSON.stringify(obj));
+        res.send(JSON.stringify(obj));
+    });
 });
 
-// var storage = multer.diskStorage({
-//     destination: function (req, file, callback) {
-//         callback(null, './upload');
-//     },
-//     filename: function (req, file, callback) {
-//         callback(null, file.fieldname + '-' );
-//     }
-// });
-// var upload = multer({ storage: storage }).fields([{ name: 'photoRegistration', maxCount: 1 }, { name: 'photoRegistry', maxCount: 1 }]);
-
-
-// app.post('/photos',upload, function (req, res) {
+// app.post('/photos', function (req, res) {
 //     var adminId = req.param('adminId');
 //     var adminName = req.param('adminName');
 //     var adminToken = req.param('adminToken');
 //     console.log(adminId + adminName + adminToken);
-//     res.end("File is uploaded");
-// });
+//     console.log("req body");
+//     console.log(req.body);
+//     var adminId1=req.body['adminId'];
+//     console.log("req files");
+//     console.log(req.files);
+//     var storage = multer.diskStorage({
+//         destination: function (req, file, callback) {
+//             callback(null, './upload');
+//         },
+//                 filename: function (req, file, callback) {
+//             console.log("it me" + adminId);
+//             callback(null, file.fieldname + '-' + req.param('adminId'));
+//         }
+//     });
+//     var upload = multer({storage:storage}).fields([{ name: 'photoRegistration', maxCount: 1 }, { name: 'photoRegistry', maxCount: 1 }]);
+//     upload(req,res,function(err) {
+//         if(err) {
+//             console.log(err);
+//             return res.end("Error uploading file.");
+//         } else {
+//            console.log(req.body);
+//            adminId1=req.body.adminId;
+//         //    req.files.forEach( function(f) {
+//         //      console.log(f);
+//         //      // and move file to final destination...
+//         //    });
+//            res.end("File has been uploaded");
+//         }
+//     });});
 
 
 var htmlPath = path.join(__dirname, 'firstreact/build');

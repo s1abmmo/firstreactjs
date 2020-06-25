@@ -5,6 +5,7 @@ import Cookies, { set } from 'js-cookie';
 import { createStore } from 'redux'
 import CurrencyFormat from 'react-currency-format';
 import moment from 'moment';
+import axios from 'axios';
 
 var initialState = {
     status: false,
@@ -323,17 +324,24 @@ class Modal extends React.Component {
         setTimeout(
             function () {
                 if (this.state.tripCode != null) {
-                    fetch("/adminLoadTripInfomation?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&tripCode=" + this.state.tripCode)
-                        .then(res => res.json())
-                        .then(
-                            (result) => {
-                                this.setState({
-                                    tripInfomation: result
-                                });
-                            },
-                            (error) => {
-                            }
-                        )
+                    axios.get("/adminLoadTripInfomation?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&tripCode=" + this.state.tripCode)
+                    .then(response => {
+                        this.setState({
+                            tripInfomation: response.data
+                        });
+
+                    })
+                    // fetch("/adminLoadTripInfomation?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&tripCode=" + this.state.tripCode)
+                    //     .then(res => res.json())
+                    //     .then(
+                    //         (result) => {
+                    //             this.setState({
+                    //                 tripInfomation: result
+                    //             });
+                    //         },
+                    //         (error) => {
+                    //         }
+                    //     )
                 }
                 this.Loop();
             }
