@@ -4,6 +4,30 @@ import './App.css';
 import Cookies from 'js-cookie';
 import axios from 'axios';
 
+class Alert extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+    render() {
+        if (this.props.status == "OK") {
+            return (
+                <div class="alert alert-success" role="alert">
+                    {this.props.message}
+                </div>
+            );
+        } else if(this.props.status == "ERROR"){
+            return (<>
+                            <div class="alert alert-danger" role="alert">
+                    {this.props.message}
+                </div>
+            </>);
+        }else {
+            return (<></>);
+        }
+    }
+}
+
+
 export default class CreateCar extends React.Component {
     constructor(props) {
         super(props);
@@ -75,7 +99,7 @@ export default class CreateCar extends React.Component {
                         "adminToken", this.state.adminToken
                     );
                     formData.append(
-                        "idCar", res.data.idCar
+                        "carId", res.data.idCar
                     );
 
                     if (this.state["photoRegistration"] != null)
@@ -135,7 +159,21 @@ export default class CreateCar extends React.Component {
 
 
                     console.log(this.state.selectedFile);
-                    axios.post("photos", formData);
+                    axios.post("photos", formData).then(res => {
+                        console.log(res);
+                        console.log(res.data);
+                        if (res.data.status == "OK") {
+                            this.setState({
+                                statusAxios: "OK",
+                                message: res.data.message
+                            });
+                        }else if(res.data.status == "ERROR"){
+                            this.setState({
+                                statusAxios: "ERROR",
+                                message: res.data.message
+                            });
+                        }
+                    });
 
                 }
             })
@@ -282,6 +320,7 @@ export default class CreateCar extends React.Component {
                     </div>
                 </div>
                 <button class="btn btn-primary" onClick={this.onFileUpload}>Create Car Infomation</button>
+                <Alert status={this.state.statusAxios} message={this.state.message}/>
             </>
         );
     }

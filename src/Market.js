@@ -250,7 +250,7 @@ class Pagination extends React.Component {
         store.dispatch({ type: 'VALUE', value: name });
     }
 
-    componentDidMount() {
+    componentWillMount() {
         fetch("/marketCountPage?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken)
             .then(res => res.json())
             .then(
