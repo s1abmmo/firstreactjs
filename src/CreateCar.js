@@ -221,16 +221,16 @@ export default class CreateCar extends React.Component {
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-4">
-                        <label for="seat">Seat</label>
+                        <label for="seat">Vehicle</label>
                         <select id="seat" class="form-control" name="seat" onChange={this.handleChange}>
                             <option selected>Choose...</option>
-                            <option>4</option>
-                            <option>5</option>
-                            <option>7</option>
-                            <option>16</option>
-                            <option>29</option>
-                            <option>35</option>
-                            <option>45</option>
+                            <option value="4">4-seater</option>
+                            <option value="5">5-seater</option>
+                            <option value="7">7-seater</option>
+                            <option value="16">16-seater</option>
+                            <option value="29">29-seater</option>
+                            <option value="35">35-seater</option>
+                            <option value="45">45-seater</option>
                         </select>
                     </div>
                     <div class="form-group col-md-4">
@@ -241,9 +241,9 @@ export default class CreateCar extends React.Component {
                         <label for="status">Status</label>
                         <select id="status" class="form-control" name="status" onChange={this.handleChange}>
                             <option selected>Choose...</option>
-                            <option>0</option>
-                            <option>1</option>
-                            <option>2</option>
+                            <option value="0">Not active</option>
+                            <option value="1">Active</option>
+                            <option value="2">Suspende</option>
                         </select>
                     </div>
                 </div>

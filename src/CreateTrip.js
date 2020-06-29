@@ -71,7 +71,7 @@ export default class CreateCar extends React.Component {
                         statusAxios: "OK",
                         message: res.data.message
                     });
-                }else if(res.data.status == "ERROR"){
+                } else if (res.data.status == "ERROR") {
                     this.setState({
                         statusAxios: "ERROR",
                         message: res.data.message
@@ -105,13 +105,25 @@ export default class CreateCar extends React.Component {
                     </div>
                     <div class="form-group col-md-6">
                         <label for="methodOfReceivingMoney">Method Of Receiving Money</label>
-                        <select class="form-control" id="methodOfReceivingMoney" name="methodOfReceivingMoney" onChange={this.handleChange}> <option value="0">The driver takes the money</option> <option value="1">Transfer</option> </select>
+                        <select class="form-control" id="methodOfReceivingMoney" name="methodOfReceivingMoney" onChange={this.handleChange}>
+                            <option value="0">The driver takes the money</option>
+                            <option value="1">Transfer</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label for="rangeOfVerhicle">Range Of Verhicle</label>
-                        <input type="text" class="form-control" id="rangeOfVerhicle" name="rangeOfVehicle" onChange={this.handleChange}></input>
+                        <select id="rangeOfVerhicle" class="form-control" name="rangeOfVerhicle" onChange={this.handleChange}>
+                            <option selected>Choose...</option>
+                            <option value="4">4-seater</option>
+                            <option value="5">5-seater</option>
+                            <option value="7">7-seater</option>
+                            <option value="16">16-seater</option>
+                            <option value="29">29-seater</option>
+                            <option value="35">35-seater</option>
+                            <option value="45">45-seater</option>
+                        </select>
                     </div>
                     <div class="form-group col-md-6">
                         <label for="priceToBuyNow">Price To Buy Now</label>
@@ -143,7 +155,7 @@ export default class CreateCar extends React.Component {
                     </div>
                     <div class="form-group col-md-4">
                         <label for="tripType">Trip Type</label>
-                        <input type="number" class="form-control" id="tripType" name="tripType" onChange={this.handleChange}></input>
+                        <input type="text" class="form-control" id="tripType" name="tripType" onChange={this.handleChange}></input>
                     </div>
                 </div>
                 <button class="btn btn-primary" onClick={this.handleClick}>Create Trip</button>
@@ -163,13 +175,13 @@ class Alert extends React.Component {
                     {this.props.message}
                 </div>
             );
-        } else if(this.props.status == "ERROR"){
+        } else if (this.props.status == "ERROR") {
             return (<>
-                            <div class="alert alert-danger" role="alert">
+                <div class="alert alert-danger" role="alert">
                     {this.props.message}
                 </div>
             </>);
-        }else {
+        } else {
             return (<></>);
         }
     }

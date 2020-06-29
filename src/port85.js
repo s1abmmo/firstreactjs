@@ -64,7 +64,7 @@ conn.connect(function (err) {
         if (err)
             console.log(err.message)
     });
-    conn.query("CREATE TABLE administratorAccounts ( adminId INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, adminName VARCHAR(100),adminPassword NVARCHAR(100),adminToken VARCHAR(32),datetimeCreated DATETIME,permissionActive VARCHAR(5),permissionBanned VARCHAR(5),permissionAddMoney VARCHAR(5),permissionDeductMoney VARCHAR(5),permissionApproveTrip VARCHAR(5),permissionCancelTrip VARCHAR(5),permissionSuspendTrip VARCHAR(5),permissionEditTrip VARCHAR(5),permissionApproveCar VARCHAR(5),permissionSuspendCar VARCHAR(5));", function (err, result, fields) {
+    conn.query("CREATE TABLE administratorAccounts ( adminId INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, adminName VARCHAR(100),adminPassword NVARCHAR(100),adminToken VARCHAR(32),datetimeCreated DATETIME,permissionSuperAdmin VARCHAR(5),permissionActive VARCHAR(5),permissionBanned VARCHAR(5),permissionAddMoney VARCHAR(5),permissionDeductMoney VARCHAR(5),permissionApproveTrip VARCHAR(5),permissionCancelTrip VARCHAR(5),permissionSuspendTrip VARCHAR(5),permissionEditTrip VARCHAR(5),permissionApproveCar VARCHAR(5),permissionSuspendCar VARCHAR(5));", function (err, result, fields) {
         if (!err)
             console.log("Create table administratorAccounts success !");
         if (err)
@@ -630,57 +630,63 @@ app.get('/transactionHistory', async function (req, res) {
     }
 });
 
-app.get('/createAdminAccount', async function (req, res) {
+app.post('/createAdminAccount', async function (req, res) {
+    var adminId = req.param('adminId');
     var adminName = req.param('adminName');
-    var adminPassword = req.param('adminPassword');
+    var adminToken = req.param('adminToken');
+    var username = req.param('username');
+    var password = req.param('password');
     var dateTimeCreated = dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss");
-    var permissionActive = req.param('permissionActive');
-    var permissionBanned = req.param('permissionBanned');
-    var permissionAddMoney = req.param('permissionAddMoney');
-    var permissionDeductMoney = req.param('permissionDeductMoney');
-    var permissionApproveTrip = req.param('permissionApproveTrip');
-    var permissionCancelTrip = req.param('permissionCancelTrip');
-    var permissionSuspendTrip = req.param('permissionSuspendTrip');
-    var permissionEditTrip = req.param('permissionEditTrip');
-    var permissionApproveCar = req.param('permissionApproveCar');
-    var permissionSuspendCar = req.param('permissionSuspendCar');
-    console.log('Create Admin:' + adminName + ' adminPassword: ' + adminPassword);
-    conn.query("SELECT adminName FROM administratorAccounts WHERE adminName = '" + adminName + "';", function (err, result, fields) {
-        if (err) throw err;
-        console.log(' ' + result.length);
-        if (result.length > 0) {
-            var obj = {
-                status: "ERROR",
-                message: "Tên tài khoản đã tồn tại"
-            }
-            console.log(JSON.stringify(obj));
-            res.send(JSON.stringify(obj));
-        } else if (result.length == 0) {
-            if (adminPassword.length > 7 && adminPassword.length < 20) {
-                conn.query("INSERT INTO administratorAccounts (adminName,adminPassword,dateTimeCreated,permissionActive,permissionBanned,permissionAddMoney,permissionDeductMoney,permissionApproveTrip,permissionCancelTrip,permissionSuspendTrip,permissionEditTrip,permissionApproveCar,permissionSuspendCar) VALUES ('" + adminName + "','" + crypto.createHash('sha256').update(adminPassword).digest('base64') + "','" + dateTimeCreated + "','" + permissionActive + "','" + permissionBanned + "','" + permissionAddMoney + "','" + permissionDeductMoney + "','" + permissionApproveTrip + "','" + permissionCancelTrip + "','" + permissionSuspendTrip + "','" + permissionEditTrip + "','" + permissionApproveCar + "','" + permissionSuspendCar + "');", function (err, result, fields) {
-                    if (err) throw err;
-                    // var id_logs = result.insertId.toString();
-                    // var obj1 = {
-                    //     id: id_logs
-                    // }
-                    var obj = {
-                        status: "OK",
-                        message: "Đăng kí thành công"
-                    }
-                    console.log(JSON.stringify(obj));
-                    res.send(JSON.stringify(obj));
-                });
-            } else {
+    // var permissionActive = req.param('permissionActive');
+    // var permissionBanned = req.param('permissionBanned');
+    // var permissionAddMoney = req.param('permissionAddMoney');
+    // var permissionDeductMoney = req.param('permissionDeductMoney');
+    // var permissionApproveTrip = req.param('permissionApproveTrip');
+    // var permissionCancelTrip = req.param('permissionCancelTrip');
+    // var permissionSuspendTrip = req.param('permissionSuspendTrip');
+    // var permissionEditTrip = req.param('permissionEditTrip');
+    // var permissionApproveCar = req.param('permissionApproveCar');
+    // var permissionSuspendCar = req.param('permissionSuspendCar');
+    console.log('Create Admin:' + adminName + ' adminPassword: ' + password);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, "permissionSuperAdmin")) {
+        conn.query("SELECT adminName FROM administratorAccounts WHERE adminName = '" + username + "';", function (err, result, fields) {
+            if (err) throw err;
+            console.log(' ' + result.length);
+            if (result.length > 0) {
                 var obj = {
                     status: "ERROR",
-                    message: "Mật khẩu không đạt yêu cầu"
+                    message: "Tên tài khoản đã tồn tại"
                 }
                 console.log(JSON.stringify(obj));
                 res.send(JSON.stringify(obj));
-            }
+            } else if (result.length == 0) {
+                if (password.length > 7 && password.length < 20) {
+                    console.log("INSERT INTO administratorAccounts (adminName,adminPassword,dateTimeCreated,permissionSuperAdmin,permissionActive,permissionBanned,permissionAddMoney,permissionDeductMoney,permissionApproveTrip,permissionCancelTrip,permissionSuspendTrip,permissionEditTrip,permissionApproveCar,permissionSuspendCar) VALUES ('" + username + "','" + crypto.createHash('sha256').update(password).digest('base64') + "','" + dateTimeCreated + "','false','false','false','false','false','false','false','false','false','false','false');");
+                    conn.query("INSERT INTO administratorAccounts (adminName,adminPassword,dateTimeCreated,permissionSuperAdmin,permissionActive,permissionBanned,permissionAddMoney,permissionDeductMoney,permissionApproveTrip,permissionCancelTrip,permissionSuspendTrip,permissionEditTrip,permissionApproveCar,permissionSuspendCar) VALUES ('" + username + "','" + crypto.createHash('sha256').update(password).digest('base64') + "','" + dateTimeCreated + "','false','false','false','false','false','false','false','false','false','false','false');", function (err, result, fields) {
+                        if (err) throw err;
+                        // var id_logs = result.insertId.toString();
+                        // var obj1 = {
+                        //     id: id_logs
+                        // }
+                        var obj = {
+                            status: "OK",
+                            message: "Đăng kí thành công"
+                        }
+                        console.log(JSON.stringify(obj));
+                        res.send(JSON.stringify(obj));
+                    });
+                } else {
+                    var obj = {
+                        status: "ERROR",
+                        message: "Mật khẩu không đạt yêu cầu"
+                    }
+                    console.log(JSON.stringify(obj));
+                    res.send(JSON.stringify(obj));
+                }
 
-        }
-    });
+            }
+        });
+    }
 });
 
 app.get('/adminLogin', async function (req, res) {
@@ -694,7 +700,7 @@ app.get('/adminLogin', async function (req, res) {
             var adminId = result[0].adminId;
             var adminToken = generate_token(32);
 
-            conn.query("UPDATE administratorAccounts SET adminToken='" + adminToken + "' WHERE adminName=" + adminName + " AND adminId=" + adminId + ";", function (err, result, fields) {
+            conn.query("UPDATE administratorAccounts SET adminToken='" + adminToken + "' WHERE adminName='" + adminName + "' AND adminId=" + adminId + ";", function (err, result, fields) {
                 if (err) throw err;
 
                 var obj = {
@@ -728,12 +734,13 @@ app.get('/checkAdminToken', async function (req, res) {
     var adminToken = req.param('adminToken');
     console.log('Check token admin ' + adminName);
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
-        conn.query("SELECT permissionActive,permissionBanned,permissionAddMoney,permissionDeductMoney,permissionApproveTrip,permissionCancelTrip,permissionSuspendTrip,permissionEditTrip,permissionApproveCar,permissionSuspendCar FROM administratorAccounts WHERE adminId = '" + adminId + "' AND adminName='" + adminName + "';", function (err, result, fields) {
+        conn.query("SELECT permissionSuperAdmin,permissionActive,permissionBanned,permissionAddMoney,permissionDeductMoney,permissionApproveTrip,permissionCancelTrip,permissionSuspendTrip,permissionEditTrip,permissionApproveCar,permissionSuspendCar FROM administratorAccounts WHERE adminId = '" + adminId + "' AND adminName='" + adminName + "';", function (err, result, fields) {
             if (err) throw err;
             if (result.length > 0) {
                 var obj = {
                     status: "OK",
                     message: "SUCCESS !",
+                    permissionSuperAdmin: result[0].permissionSuperAdmin,
                     permissionActive: result[0].permissionActive,
                     permissionBanned: result[0].permissionBanned,
                     permissionAddMoney: result[0].permissionAddMoney,
@@ -930,22 +937,26 @@ app.get('/adminLoadMarket', async function (req, res) {
     var rowStart = ((page - 1) * maxRowInPage);
     console.log(rowStart + "," + maxRowInPage);
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
-        conn.query("SELECT * FROM tripspending LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
+        conn.query("SELECT * FROM markettrips LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
             if (err) throw err;
-            var tripspending = result;
-            var objListExport = [];
-            for (var a = 0; a < tripspending.length; a++) {
-                var obj = tripspending[a];
-                obj.tripStatus = 0;
-                if (tripspending[a].approved == true || tripspending[a].approved == "true") {
-                    var markettrip = await GetFromMarket1(tripspending[a]);
-                        markettrip.tripId = obj.tripId;
-                    obj = markettrip;
-                    obj.tripStatus = 1;
-                    console.log(JSON.stringify(obj));
-                }
-                obj.departureTime = dateFormat(obj.departureTime, "yyyy-mm-dd HH:MM:ss");
-                objListExport.push(obj);
+            console.log(result.length);
+            // var tripspending = result;
+            var objListExport = result;
+            for (var a = 0; a < objListExport.length; a++) {
+                //     var obj = tripspending[a];
+                //     console.log("id: " + obj.tripId);
+                //     obj.tripStatus = 0;
+                //     if (tripspending[a].approved == true || tripspending[a].approved == "true") {
+                //         var markettrip = await GetFromMarket1(tripspending[a]);
+                //         if (markettrip != null) {
+                //             markettrip.tripId = obj.tripId;
+                //             obj = markettrip;
+                //             obj.tripStatus = 1;
+                //             console.log(obj.tripId);
+                //         }
+                //     }
+                objListExport.departureTime = dateFormat(objListExport.departureTime, "yyyy-mm-dd HH:MM:ss");
+                // objListExport.push(obj);
             }
             console.log(JSON.stringify(objListExport));
             res.send(JSON.stringify(objListExport));
@@ -965,7 +976,7 @@ async function GetFromMarket1(obj2) {
             if (result1.length > 0) {
                 markettrip = result1[0];
             }
-            console.log(JSON.stringify(markettrip))
+            // console.log(JSON.stringify(markettrip))
             return resolve(markettrip);
         });
     })
@@ -977,7 +988,7 @@ app.get('/marketCountPage', async function (req, res) {
     var adminToken = req.param('adminToken');
     //console.log(rowStart + "," + maxRowInPage);
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
-        conn.query("SELECT COUNT(*) AS pageCount FROM tripspending;", async function (err, result, fields) {
+        conn.query("SELECT COUNT(*) AS pageCount FROM markettrips;", async function (err, result, fields) {
             if (err) throw err;
             if (result.length > 0) {
                 var obj =
@@ -999,30 +1010,30 @@ app.get('/adminLoadTripInfomation', async function (req, res) {
     var tripCode = req.param('tripCode');
     console.log(tripCode);
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
-        conn.query("SELECT * FROM tripspending WHERE tripCode='" + tripCode + "';", async function (err, result, fields) {
+        conn.query("SELECT * FROM markettrips WHERE tripCode='" + tripCode + "';", async function (err, result, fields) {
             if (err) throw err;
 
             if (result.length > 0) {
-                var obj = result[0];
-                conn.query("SELECT * FROM markettrips WHERE tripCode='" + tripCode + "';", async function (err, result, fields) {
-                    if (err) throw err;
-                    if (result.length > 0) {
-                        var obj1 = result[0];
-                        obj1.tripId = obj.tripId;
-                        // obj1.departureTime=dateFormat(obj1.departureTime, "yyyy-mm-dd")+"T"+dateFormat(obj1.departureTime, "HH:MM");
-                        // obj1.timeOpenOnMarket=dateFormat(obj1.timeOpenOnMarket, "yyyy-mm-dd")+"T"+dateFormat(obj1.timeOpenOnMarket, "HH:MM");
-                        // obj1.dateTimePosted=dateFormat(obj1.dateTimePosted, "yyyy-mm-dd")+"T"+dateFormat(obj1.dateTimePosted, "HH:MM");
+                console.log(JSON.stringify(result[0]));
+                res.send(JSON.stringify(result[0]));
+                // var obj = result[0];
+                // conn.query("SELECT * FROM markettrips WHERE tripCode='" + tripCode + "';", async function (err, result, fields) {
+                //     if (err) throw err;
+                //     if (result.length > 0) {
+                //         var obj1 = result[0];
+                //         obj1.tripId = obj.tripId;
+                //         // obj1.departureTime=dateFormat(obj1.departureTime, "yyyy-mm-dd")+"T"+dateFormat(obj1.departureTime, "HH:MM");
+                //         // obj1.timeOpenOnMarket=dateFormat(obj1.timeOpenOnMarket, "yyyy-mm-dd")+"T"+dateFormat(obj1.timeOpenOnMarket, "HH:MM");
+                //         // obj1.dateTimePosted=dateFormat(obj1.dateTimePosted, "yyyy-mm-dd")+"T"+dateFormat(obj1.dateTimePosted, "HH:MM");
 
-                        console.log(JSON.stringify(obj1));
-                        res.send(JSON.stringify(obj1));
-                    } else {
-                        // obj.departureTime=dateFormat(obj.departureTime, "yyyy-mm-dd")+"T"+dateFormat(obj.departureTime, "HH:MM");
-                        // obj.timeOpenOnMarket=dateFormat(obj.timeOpenOnMarket, "yyyy-mm-dd")+"T"+dateFormat(obj.timeOpenOnMarket, "HH:MM");
-                        // obj.dateTimePosted=dateFormat(obj.dateTimePosted, "yyyy-mm-dd")+"T"+dateFormat(obj.dateTimePosted, "HH:MM");
-                        console.log(JSON.stringify(obj));
-                        res.send(JSON.stringify(obj));
-                    }
-                });
+                //         console.log(JSON.stringify(obj1));
+                //         res.send(JSON.stringify(obj1));
+                //     } else {
+                //         // obj.departureTime=dateFormat(obj.departureTime, "yyyy-mm-dd")+"T"+dateFormat(obj.departureTime, "HH:MM");
+                //         // obj.timeOpenOnMarket=dateFormat(obj.timeOpenOnMarket, "yyyy-mm-dd")+"T"+dateFormat(obj.timeOpenOnMarket, "HH:MM");
+                //         // obj.dateTimePosted=dateFormat(obj.dateTimePosted, "yyyy-mm-dd")+"T"+dateFormat(obj.dateTimePosted, "HH:MM");
+                //     }
+                // });
             }
         });
     }
@@ -1248,8 +1259,8 @@ app.post('/adminCreateTrip', async function (req, res) {
     var timeOpenOnMarket = dateFormat(req.param('timeOpenOnMarket'), "yyyy-mm-dd HH:MM:ss");
     var guestPrice = req.param('guestPrice');
     var tripType = req.param('tripType');
-    var dateTimePosted=dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss");
-    var accountId=0;
+    var dateTimePosted = dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss");
+    var accountId = 0;
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
         function GenerateTrip() {
             var tripCode = generate_tripCode(6);
@@ -1278,13 +1289,169 @@ app.post('/adminCreateTrip', async function (req, res) {
                                 message: "Đăng chuyến thành công"
                             }
                             console.log(JSON.stringify(obj));
-                            res.send(JSON.stringify(obj));    
+                            res.send(JSON.stringify(obj));
                         });
                     });
                 } else GenerateTrip();
             });
-        }  
-        GenerateTrip();  
+        }
+        GenerateTrip();
+    }
+});
+
+app.post('/loadAdminAccounts', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, "permissionSuperAdmin")) {
+        conn.query("SELECT * FROM administratoraccounts;", async function (err, result, fields) {
+            if (err) throw err;
+            var objectList = result;
+            console.log(objectList);
+            res.send(JSON.stringify(objectList));
+        });
+    }
+});
+
+app.post('/editAdminPermission', async function (req, res) {
+    var superAdminId = req.param('superAdminId');
+    var superAdminName = req.param('superAdminName');
+    var superAdminToken = req.param('superAdminToken');
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var permissionActive = req.param('permissionActive');
+    var permissionBanned = req.param('permissionBanned');
+    var permissionAddMoney = req.param('permissionAddMoney');
+    var permissionDeductMoney = req.param('permissionDeductMoney');
+    var permissionApproveTrip = req.param('permissionApproveTrip');
+    var permissionCancelTrip = req.param('permissionCancelTrip');
+    var permissionSuspendTrip = req.param('permissionSuspendTrip');
+    var permissionEditTrip = req.param('permissionEditTrip');
+    var permissionApproveCar = req.param('permissionApproveCar');
+    var permissionSuspendCar = req.param('permissionSuspendCar');
+
+    if (await CheckAuthenticationAdmin(superAdminId, superAdminName, superAdminToken, "permissionSuperAdmin")) {
+        conn.query("UPDATE administratorAccounts SET permissionActive='" + permissionActive + "',permissionBanned='" + permissionBanned + "',permissionAddMoney='" + permissionAddMoney + "',permissionDeductMoney='" + permissionDeductMoney + "',permissionApproveTrip='" + permissionApproveTrip + "',permissionCancelTrip='" + permissionCancelTrip + "',permissionSuspendTrip='" + permissionSuspendTrip + "',permissionEditTrip='" + permissionEditTrip + "',permissionApproveCar='" + permissionApproveCar + "',permissionSuspendCar='" + permissionSuspendCar + "' WHERE adminName='" + adminName + "' AND adminId=" + adminId + ";", function (err, result, fields) {
+            if (err) throw err;
+
+            var obj = {
+                status: "OK",
+                message: "Sửa quyền thành công",
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+    }
+});
+
+app.post('/adminActiveTrip', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var tripId = req.param('tripId');
+    var tripCode = req.param('tripCode');
+
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, "permissionApproveTrip")) {
+        console.log('Active ' + tripCode);
+        conn.query("UPDATE markettrips SET status='0' WHERE tripId='" + tripId + "' AND tripCode = '" + tripCode + "';", function (err, result, fields) {
+            if (err) {
+                var obj = {
+                    status: "ERROR",
+                    message: "Lỗi không xác định 2"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+            if (err) throw err;
+            var obj = {
+                status: "OK",
+                message: "Kích hoạt thành công"
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+    }
+});
+
+app.post('/adminSuspendeTrip', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var tripId = req.param('tripId');
+    var tripCode = req.param('tripCode');
+
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, "permissionSuspendeTrip")) {
+        console.log('Suspende ' + tripCode);
+        conn.query("UPDATE markettrips SET status='1' WHERE tripId = '" + tripId + "' AND tripCode = '" + tripCode + "';", function (err, result, fields) {
+            if (err) {
+                var obj = {
+                    status: "ERROR",
+                    message: "Lỗi không xác định 2"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+            if (err) throw err;
+            var obj = {
+                status: "OK",
+                message: "Đình chỉ thành công"
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+
+    }
+});
+
+app.post('/adminLoadTransactionHistory', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var page = req.param('page');
+    var rowStart = ((page - 1) * maxRowInPage);
+
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT * FROM transactionhistory LIMIT " + rowStart + "," + maxRowInPage + ";", function (err, result, fields) {
+            if (err) {
+                var obj = {
+                    status: "ERROR",
+                    message: "Lỗi không xác định 2"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+            if (err) throw err;
+            var obj = result;
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+
+    }
+});
+
+app.post('/adminEditTrip', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var page = req.param('page');
+    var rowStart = ((page - 1) * maxRowInPage);
+
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT * FROM transactionhistory LIMIT " + rowStart + "," + maxRowInPage + ";", function (err, result, fields) {
+            if (err) {
+                var obj = {
+                    status: "ERROR",
+                    message: "Lỗi không xác định 2"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+            if (err) throw err;
+            var obj = result;
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+
     }
 });
 

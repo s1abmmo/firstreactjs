@@ -126,7 +126,7 @@ export default class CreateUser extends React.Component {
                 <div class="form-row">
                     <div class="form-group col-md-6">
                         <label for="fullname">Full name</label>
-                        <input type="text" class="form-control" id="fullname" placeholder="Email" name="fullname" value={this.state.fullname} onChange={this.handleChange} />
+                        <input type="text" class="form-control" id="fullname" placeholder="Full name" name="fullname" value={this.state.fullname} onChange={this.handleChange} />
                     </div>
                     <div class="form-group col-md-6">
                         <label for="email">Email</label>
@@ -140,9 +140,9 @@ export default class CreateUser extends React.Component {
                         <label for="status">Status</label>
                         <select id="status" class="form-control" name="status" value={this.state.status} onChange={this.handleChange}>
                             <option selected>Choose...</option>
-                            <option>0</option>
-                            <option>1</option>
-                            <option>2</option>
+                            <option value="0">Not Active</option>
+                            <option value="1">Active</option>
+                            <option value="2">Banned</option>
                         </select>
                     </div>
 
