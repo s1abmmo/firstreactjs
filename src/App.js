@@ -11,6 +11,7 @@ import CreateUser from './CreateUser';
 import CreateTrip from './CreateTrip';
 import SuperAdmin from './SuperAdmin';
 import TransactionHistory from './transactionHistory';
+import Pending from './Pending';
 
 class UserPage extends React.Component {
   constructor(props) {
@@ -47,7 +48,7 @@ class UserPage extends React.Component {
   Pending() {
     this.state.indexClass = 2;
     this.setState({
-      content: <Market />
+      content: <Pending />
     })
 
   }

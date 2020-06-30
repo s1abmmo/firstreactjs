@@ -357,14 +357,14 @@ class Modal extends React.Component {
                                 <div class="form-group col-md-3">
                                     Year of manufacture
                                     {this.state.editMode ?
-                                        <input type="number" class="form-control" id="yearofmanufacture" placeholder={this.state.carInfomation.yearOfManuFacture} name="yearOfManuFacture" onChange={this.handleChange} />
+                                        <input type="number" class="form-control" id="yearofmanufacture" placeholder={this.state.carInfomation.yearOfManufacture} name="yearOfManufacture" onChange={this.handleChange} />
                                         :
-                                        <div>{this.state.carInfomation.yearOfManuFacture}</div>}
+                                        <div>{this.state.carInfomation.yearOfManufacture}</div>}
                                 </div>
                                 <div class="form-group col-md-2">
                                     Status
                                     {this.state.editMode ?
-                                        <select id="status" class="form-control" name="status" value={this.state.carInfomation.status} onChange={this.handleChange}>
+                                        <select id="status" class="form-control" name="status" defaultValue={this.state.carInfomation.status} onChange={this.handleChange}>
                                             <option selected>Choose...</option>
                                             <option value="0">Not active</option>
                                             <option value="1">Active</option>

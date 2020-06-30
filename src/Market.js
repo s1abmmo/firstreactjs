@@ -14,6 +14,10 @@ var initialState = {
     modal: {
         status: false,
         tripCode: null
+    },
+    page: {
+        currentPage: 1,
+        received: true
     }
 }
 
@@ -42,6 +46,16 @@ function statusmarket(state = initialState, action) {
         let newState = state;
         newState.modal.status = false;
         return newState;
+    }else if(action.type === 'CHANGEPAGE'){
+        let newState = state;
+        newState.page.currentPage = action.newPage;
+        newState.page.received = false;
+        return newState;
+    }
+    else if(action.type === 'RECEIVEDPAGE'){
+        let newState = state;
+        newState.page.received = true;
+        return newState;
     }
     return state;
 }
@@ -63,48 +77,40 @@ class LoadMarket extends React.Component {
     }
 
     componentDidMount() {
-        fetch("/adminLoadMarket?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + this.state.currentPage)
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    this.setState({
-                        isLoaded: true,
-                        items: result
-                    });
-                },
-                (error) => {
-                    this.setState({
-                        isLoaded: true,
-                        error
-                    });
-                }
-            )
+        axios.post("/adminLoadMarket", {
+            adminId:this.state.adminId,
+            adminName:this.state.adminName,
+            adminToken: this.state.adminToken,
+            page:this.state.currentPage
+        })
+        .then(res => {
+            this.setState({
+                isLoaded: true,
+                items: res.data
+            });
+        })    
     }
     render() {
         store.subscribe(() => {
-            if (store.getState().status == true) {
-                var cpage = store.getState();
-                store.dispatch({ type: 'FALSE', value: null });
-                console.log("da nhan " + cpage.value)
+            if (store.getState().page.received == false) {
+                var cpage = store.getState().page;
+                store.dispatch({ type: 'RECEIVEDPAGE'});
+                console.log("da nhan " + cpage.currentPage)
                 this.setState({
-                    currentPage: cpage.value
+                    currentPage: cpage.currentPage
                 })
-                fetch("/adminLoadMarket?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&page=" + cpage.value)
-                    .then(res => res.json())
-                    .then(
-                        (result) => {
-                            this.setState({
-                                isLoaded: true,
-                                items: result
-                            });
-                        },
-                        (error) => {
-                            this.setState({
-                                isLoaded: true,
-                                error
-                            });
-                        }
-                    )
+                axios.post("/adminLoadMarket", {
+                    adminId:this.state.adminId,
+                    adminName:this.state.adminName,
+                    adminToken: this.state.adminToken,
+                    page:cpage.currentPage
+                })
+                .then(res => {
+                    this.setState({
+                        isLoaded: true,
+                        items: res.data
+                    });
+                })    
 
             }
         }
@@ -167,7 +173,6 @@ class Trip extends React.Component {
             adminName: Cookies.get('adminName'),
             adminToken: Cookies.get('adminToken'),
         };
-        console.log(this.state.adminId);
         this.MoreClick = this.MoreClick.bind(this);
     }
     MoreClick() {
@@ -246,8 +251,8 @@ class Pagination extends React.Component {
     handleChange(event) {
         const target = event.target;
         const name = target.name;
-        console.log(name);
-        store.dispatch({ type: 'VALUE', value: name });
+        console.log("Click page "+name);
+        store.dispatch({ type: 'CHANGEPAGE', newPage: name });
     }
 
     componentWillMount() {
@@ -309,6 +314,8 @@ class Modal extends React.Component {
         this.Loop = this.Loop.bind(this);
         this.ApplyClick = this.ApplyClick.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.Active = this.Active.bind(this);
+        this.Suspende = this.Suspende.bind(this);
     }
     IsMounted = false;
     componentWillMount() {
@@ -393,26 +400,26 @@ class Modal extends React.Component {
         );
     }
 
-    Approve() {
-        var adminApproveTrip = {
+    Active() {
+        axios.post("/adminActiveTrip", {
             adminId: this.state.adminId,
             adminName: this.state.adminName,
             adminToken: this.state.adminToken,
+            tripId: this.state.tripInfomation.tripId,
             tripCode: this.state.tripInfomation.tripCode
-        }
-        axios.post("/adminApproveTrip", adminApproveTrip)
+        })
             .then(response => {
             })
     }
 
     Suspende() {
-        var adminApproveTrip = {
+        axios.post("/adminSuspendeTrip", {
             adminId: this.state.adminId,
             adminName: this.state.adminName,
             adminToken: this.state.adminToken,
+            tripId: this.state.tripInfomation.tripId,
             tripCode: this.state.tripInfomation.tripCode
-        }
-        axios.post("/adminSuspendeTrip", adminApproveTrip)
+        })
             .then(response => {
             })
     }
@@ -429,10 +436,6 @@ class Modal extends React.Component {
             }
         }
         );
-        var departureTime = new Date(this.state.tripInfomation.departureTime).toLocaleDateString("en-US", { year: 'numeric', month: '2-digit', day: '2-digit' });
-        // var departureTime=new Date(this.state.tripInfomation.departureTime).toISOString();
-        // var departureTimeDate=departureTime.getFullYear()+"-"+departureTime.getMonth()+"-"+departureTime.getDay()+"T"+departureTime.getHours()+":"+departureTime.getMinutes();
-        console.log(departureTime);
         return (
             <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-xl">
@@ -474,9 +477,9 @@ class Modal extends React.Component {
                         </div>
                         <div class="modal-footer">
                             <div class="btn-group" role="group" aria-label="Basic example">
-                                <button type="button" class="btn btn-primary">Approve</button>
+                                <button type="button" class="btn btn-primary" onClick={this.Active}>Approve</button>
                                 <button type="button" class="btn btn-secondary" onClick={this.state.editMode ? this.ApplyClick : this.EditClick}>{this.state.editMode ? "Apply" : "Edit"}</button>
-                                <button type="button" class="btn btn-danger">Suspende</button>
+                                <button type="button" class="btn btn-danger" onClick={this.Suspende}>Suspende</button>
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                             </div>
                         </div>

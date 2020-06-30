@@ -929,7 +929,7 @@ app.get('/addBalance', async function (req, res) {
     }
 });
 
-app.get('/adminLoadMarket', async function (req, res) {
+app.post('/adminLoadMarket', async function (req, res) {
     var adminId = req.param('adminId');
     var adminName = req.param('adminName');
     var adminToken = req.param('adminToken');
@@ -994,7 +994,7 @@ app.get('/marketCountPage', async function (req, res) {
                 var obj =
                 {
                     status: "OK",
-                    pageCount: (result[0].pageCount / maxRowInPage)
+                    pageCount: Math.ceil((result[0].pageCount / maxRowInPage))
                 }
                 console.log(obj);
                 res.send(JSON.stringify(obj));
@@ -1073,7 +1073,7 @@ app.get('/carsCountPage', async function (req, res) {
                 var obj =
                 {
                     status: "OK",
-                    pageCount: (result[0].pageCount / maxRowInPage)
+                    pageCount: Math.ceil((result[0].pageCount / maxRowInPage))
                 }
                 console.log(obj);
                 res.send(JSON.stringify(obj));
@@ -1131,7 +1131,6 @@ var storage = multer.diskStorage({
     filename: async function (req, file, callback) {
         if (await CheckAuthenticationAdmin(req.param('adminId'), req.param('adminName'), req.param('adminToken'), null)) {
             callback(null, req.param('carId') + '-' + file.fieldname + path.extname(file.originalname));
-
         };
     }
 });
@@ -1156,7 +1155,7 @@ app.post('/photos', upload, function (req, res) {
         }
         console.log(JSON.stringify(obj));
         res.send(JSON.stringify(obj));
-    });
+    });        
 });
 
 // app.post('/photos', function (req, res) {
@@ -1518,6 +1517,84 @@ app.post('/adminLoadCarInfo', async function (req, res) {
 
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
         conn.query("SELECT * FROM cars WHERE id='" + carId + "';", function (err, result, fields) {
+            if (err) {
+                var obj = {
+                    status: "ERROR",
+                    message: "Lỗi không xác định"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+            if (err) throw err;
+            if (result.length > 0) {
+                var obj = result[0];
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            } else {
+                var obj = {
+                    status: "ERROR",
+                    message: "Không tìm thấy"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+        });
+
+    }
+});
+
+app.post('/adminLoadPendingTrips', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var page = req.param('page');
+    var rowStart = ((page - 1) * maxRowInPage);
+    console.log(rowStart + "," + maxRowInPage);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT * FROM tripspending LIMIT " + rowStart + "," + maxRowInPage + ";", async function (err, result, fields) {
+            if (err) throw err;
+            console.log(result.length);
+            var objListExport = result;
+            for (var a = 0; a < objListExport.length; a++) {
+                objListExport.departureTime = dateFormat(objListExport.departureTime, "yyyy-mm-dd HH:MM:ss").toString();
+                objListExport.timeOpenOnMarket = dateFormat(objListExport.timeOpenOnMarket, "yyyy-mm-dd HH:MM:ss").toString();
+                objListExport.dateTimePosted = dateFormat(objListExport.dateTimePosted, "yyyy-mm-dd HH:MM:ss").toString();
+            }
+            console.log(JSON.stringify(objListExport));
+            res.send(JSON.stringify(objListExport));
+
+        });
+    }
+});
+
+app.get('/tripsPendingCountPage', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT COUNT(*) AS pageCount FROM tripspending;", async function (err, result, fields) {
+            if (err) throw err;
+            if (result.length > 0) {
+                var obj =
+                {
+                    status: "OK",
+                    pageCount: Math.ceil((result[0].pageCount / maxRowInPage))
+                }
+                console.log(obj);
+                res.send(JSON.stringify(obj));
+            }
+        });
+    }
+});
+
+app.post('/adminLoadPendingTripInfomation', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var tripCode = req.param('tripCode');
+
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT * FROM tripspending WHERE tripCode='" + tripCode + "';", function (err, result, fields) {
             if (err) {
                 var obj = {
                     status: "ERROR",
