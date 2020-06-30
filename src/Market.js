@@ -331,7 +331,7 @@ class Modal extends React.Component {
         const target = event.target;
         const name = target.name;
 
-        console.log(name+target.value);
+        console.log(name + target.value);
         this.setState({
             [name]: target.value
         });
@@ -343,7 +343,7 @@ class Modal extends React.Component {
             adminName: this.state.adminName,
             adminToken: this.state.adminToken,
 
-            tripId: this.state.tripId,
+            tripId: this.state.tripInfomation.tripId,
             tripCode: this.state.tripCode,
             tripFrom: this.state.tripFrom,
             tripTo: this.state.tripTo,
@@ -364,6 +364,7 @@ class Modal extends React.Component {
             .then(res => {
                 // store.dispatch({ type: 'INPUT', status: res.data.status, message: this.props.adminName + " " + res.data.message });
             })
+        this.IsMounted = true;
         this.setState({
             editMode: !this.state.editMode
         })
@@ -452,7 +453,7 @@ class Modal extends React.Component {
                                             </div>}
                                     </div>
                                 </li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">To</div>{this.state.editMode ? <textarea name="tripTo"type="text" class="form-control col-5" rows="3" placeholder={this.state.tripInfomation.tripTo} onChange={this.handleChange}></textarea> : <div class="col">{this.state.tripInfomation.tripTo}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">To</div>{this.state.editMode ? <textarea name="tripTo" type="text" class="form-control col-5" rows="3" placeholder={this.state.tripInfomation.tripTo} onChange={this.handleChange}></textarea> : <div class="col">{this.state.tripInfomation.tripTo}</div>}</div></li>
                                 <li class="list-group-item"><div class="row"><div class="col-3">Departure Time</div>{this.state.editMode ? <input name="departureTime" type="datetime-local" class="form-control col-5" placeholder={moment(this.state.tripInfomation.departureTime).format('YYYY-MM-DDTHH:SS')} onChange={this.handleChange}></input> : <div class="col">{new Date(this.state.tripInfomation.departureTime).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>}</div></li>
                                 <li class="list-group-item"><div class="row"><div class="col-3">Method of Receiveing Money</div>{this.state.editMode ? <select name="methodOfReceivingMoney" class="form-control col-3" id="exampleFormControlSelect1" onChange={this.handleChange}> <option value="0">The driver takes the money</option> <option value="1">Transfer</option> </select> : <div class="col">{this.state.tripInfomation.methodOfReceivingMoney}</div>}</div></li>
                                 <li class="list-group-item"><div class="row"><div class="col-3">Range Of Verhicle</div>{this.state.editMode ? <input name="rangeOfVehicle" type="text" class="form-control col-5" placeholder={this.state.tripInfomation.rangeOfVehicle} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.rangeOfVehicle}</div>}</div></li>

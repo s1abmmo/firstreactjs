@@ -46,7 +46,7 @@ conn.connect(function (err) {
         if (err)
             console.log(err.message)
     });
-    conn.query("CREATE TABLE marketTrips ( tripId INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, tripCode VARCHAR(6), tripFrom NVARCHAR(1000),tripTo NVARCHAR(1000), departureTime DATETIME,methodOfReceivingMoney VARCHAR(100),rangeOfVehicle VARCHAR(3),priceToBuyNow VARCHAR(100),priceStart VARCHAR(10),priceBidCurrent VARCHAR(100),idLastUserBid VARCHAR(100),endBid VARCHAR(100),pricePlaceBid VARCHAR(100),timeLastBid DATETIME,customerIsFullName NVARCHAR(100),customerIsPhone VARCHAR(15),timeOpenOnMarket DATETIME,guestPrice VARCHAR(10),tripType NVARCHAR(100),idUserPosted VARCHAR(6),dateTimePosted DATETIME);", function (err, result, fields) {
+    conn.query("CREATE TABLE marketTrips ( tripId INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, tripCode VARCHAR(6), tripFrom NVARCHAR(1000),tripTo NVARCHAR(1000), departureTime DATETIME,methodOfReceivingMoney VARCHAR(100),rangeOfVehicle VARCHAR(3),priceToBuyNow VARCHAR(100),priceStart VARCHAR(10),priceBidCurrent VARCHAR(100),idLastUserBid VARCHAR(100),endBid VARCHAR(100),pricePlaceBid VARCHAR(100),timeLastBid DATETIME,customerIsFullName NVARCHAR(100),customerIsPhone VARCHAR(15),timeOpenOnMarket DATETIME,guestPrice VARCHAR(10),tripType NVARCHAR(100),idUserPosted VARCHAR(6),dateTimePosted DATETIME,status VARCHAR(5));", function (err, result, fields) {
         if (!err)
             console.log("Create table success !");
         if (err)
@@ -1107,22 +1107,22 @@ app.post('/createCarInfomation', async function (req, res) {
     }
 });
 
-const imageUploader = multer({ dest: 'images/' });
+// const imageUploader = multer({ dest: 'images/' });
 
-app.post('/upload', imageUploader.single('myFile'), (req, res) => {
-    const processedFile = req.file || {}; // MULTER xử lý và gắn đối tượng FILE vào req
-    let orgName = processedFile.originalname || ''; // Tên gốc trong máy tính của người upload
-    orgName = orgName.trim().replace(/ /g, "-")
-    const fullPathInServ = processedFile.path; // Đường dẫn đầy đủ của file vừa đc upload lên server
-    // Đổi tên của file vừa upload lên, vì multer đang đặt default ko có đuôi file
-    const newFullPath = `${fullPathInServ}-${orgName}`;
-    fs.renameSync(fullPathInServ, newFullPath);
-    res.send({
-        status: true,
-        message: 'file uploaded',
-        fileNameInServer: newFullPath
-    })
-})
+// app.post('/upload', imageUploader.single('myFile'), (req, res) => {
+//     const processedFile = req.file || {}; // MULTER xử lý và gắn đối tượng FILE vào req
+//     let orgName = processedFile.originalname || ''; // Tên gốc trong máy tính của người upload
+//     orgName = orgName.trim().replace(/ /g, "-")
+//     const fullPathInServ = processedFile.path; // Đường dẫn đầy đủ của file vừa đc upload lên server
+//     // Đổi tên của file vừa upload lên, vì multer đang đặt default ko có đuôi file
+//     const newFullPath = `${fullPathInServ}-${orgName}`;
+//     fs.renameSync(fullPathInServ, newFullPath);
+//     res.send({
+//         status: true,
+//         message: 'file uploaded',
+//         fileNameInServer: newFullPath
+//     })
+// })
 
 var storage = multer.diskStorage({
     destination: function (req, file, callback) {
@@ -1130,7 +1130,7 @@ var storage = multer.diskStorage({
     },
     filename: async function (req, file, callback) {
         if (await CheckAuthenticationAdmin(req.param('adminId'), req.param('adminName'), req.param('adminToken'), null)) {
-            callback(null, req.param('carId') + '-' + file.fieldname);
+            callback(null, req.param('carId') + '-' + file.fieldname + path.extname(file.originalname));
 
         };
     }
@@ -1409,6 +1409,7 @@ app.post('/adminLoadTransactionHistory', async function (req, res) {
     var adminToken = req.param('adminToken');
     var page = req.param('page');
     var rowStart = ((page - 1) * maxRowInPage);
+    var tripFrom = req.param('adminToken');
 
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
         conn.query("SELECT * FROM transactionhistory LIMIT " + rowStart + "," + maxRowInPage + ";", function (err, result, fields) {
@@ -1433,11 +1434,56 @@ app.post('/adminEditTrip', async function (req, res) {
     var adminId = req.param('adminId');
     var adminName = req.param('adminName');
     var adminToken = req.param('adminToken');
-    var page = req.param('page');
-    var rowStart = ((page - 1) * maxRowInPage);
+    var objList = [];
+    var tripId = req.param('tripId');
+    var tripCode = req.param('tripCode');
+
+    var tripFrom = req.param('tripFrom');
+    if (tripFrom != null)
+        objList.push("tripFrom='" + tripFrom + "'");
+    var tripTo = req.param('tripTo');
+    if (tripTo != null)
+        objList.push("tripTo='" + tripTo + "'");
+    var departureTime = req.param('departureTime');
+    if (departureTime != null)
+        objList.push("departureTime='" + departureTime + "'");
+    var methodOfReceivingMoney = req.param('methodOfReceivingMoney');
+    if (methodOfReceivingMoney != null)
+        objList.push("methodOfReceivingMoney='" + methodOfReceivingMoney + "'");
+    var rangeOfVehicle = req.param('rangeOfVehicle');
+    if (rangeOfVehicle != null)
+        objList.push("rangeOfVehicle='" + rangeOfVehicle + "'");
+    var priceToBuyNow = req.param('priceToBuyNow');
+    if (priceToBuyNow != null)
+        objList.push("priceToBuyNow='" + priceToBuyNow + "'");
+    var priceStart = req.param('priceStart');
+    if (priceStart != null)
+        objList.push("priceStart='" + priceStart + "'");
+    var endBid = req.param('endBid');
+    if (endBid != null)
+        objList.push("endBid='" + endBid + "'");
+    var pricePlaceBid = req.param('pricePlaceBid');
+    if (pricePlaceBid != null)
+        objList.push("pricePlaceBid='" + pricePlaceBid + "'");
+    var customerIsFullName = req.param('customerIsFullName');
+    if (customerIsFullName != null)
+        objList.push("customerIsFullName='" + customerIsFullName + "'");
+    var customerIsPhone = req.param('customerIsPhone');
+    if (customerIsPhone != null)
+        objList.push("customerIsPhone='" + customerIsPhone + "'");
+    var timeOpenOnMarket = req.param('timeOpenOnMarket');
+    if (timeOpenOnMarket != null)
+        objList.push("timeOpenOnMarket='" + timeOpenOnMarket + "'");
+    var guestPrice = req.param('guestPrice');
+    if (guestPrice != null)
+        objList.push("guestPrice='" + guestPrice + "'");
+    var tripType = req.param('tripType');
+    if (tripType != null)
+        objList.push("tripType='" + tripType + "'");
+    var mysqlquery = objList.join(",");
 
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
-        conn.query("SELECT * FROM transactionhistory LIMIT " + rowStart + "," + maxRowInPage + ";", function (err, result, fields) {
+        conn.query("UPDATE markettrips SET " + mysqlquery + " WHERE tripId=" + tripId + " AND tripCode = '" + tripCode + "';", function (err, result, fields) {
             if (err) {
                 var obj = {
                     status: "ERROR",
@@ -1447,7 +1493,10 @@ app.post('/adminEditTrip', async function (req, res) {
                 res.send(JSON.stringify(obj));
             }
             if (err) throw err;
-            var obj = result;
+            var obj = {
+                status: "OK",
+                message: "Đình chỉ thành công"
+            }
             console.log(JSON.stringify(obj));
             res.send(JSON.stringify(obj));
         });
@@ -1455,7 +1504,47 @@ app.post('/adminEditTrip', async function (req, res) {
     }
 });
 
-var htmlPath = path.join(__dirname, 'firstreact/build');
+app.get('/adminCarImage', function (req, res) {
+    var fileName = req.param('fileName');
+    var pathFile = path.join(__dirname, 'upload');
+    res.sendFile(pathFile + fileName);
+});
+
+app.post('/adminLoadCarInfo', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var carId = req.param('carId');
+
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("SELECT * FROM cars WHERE id='" + carId + "';", function (err, result, fields) {
+            if (err) {
+                var obj = {
+                    status: "ERROR",
+                    message: "Lỗi không xác định"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+            if (err) throw err;
+            if (result.length > 0) {
+                var obj = result[0];
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            } else {
+                var obj = {
+                    status: "ERROR",
+                    message: "Không tìm thấy"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+        });
+
+    }
+});
+
+var htmlPath = path.join(__dirname, 'build');
 
 app.use(express.static(htmlPath));
 

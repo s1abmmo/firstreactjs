@@ -5,14 +5,15 @@ import Cookies, { set } from 'js-cookie';
 import { createStore } from 'redux'
 import CurrencyFormat from 'react-currency-format';
 import moment from 'moment';
+import axios from 'axios';
 
 var initialState = {
     status: false,
     objlist: {},
     editMode: false,
     modal: {
-        status: false,
-        tripCode: null
+        received: true,
+        carId: null
     }
 }
 
@@ -32,14 +33,14 @@ function statusmarket(state = initialState, action) {
         newState.editMode = action.editMode;
         newState.status = true;
         return newState;
-    } else if (action.type === 'UPDATETRIPCODE') {
+    } else if (action.type === 'UPDATECARID') {
         let newState = state;
-        newState.modal.tripCode = action.tripCode;
-        newState.modal.status = true;
+        newState.modal.carId = action.carId;
+        newState.modal.received = false;
         return newState;
-    } else if (action.type === 'RECEIVEDTRIPCODE') {
+    } else if (action.type === 'RECEIVEDCARID') {
         let newState = state;
-        newState.modal.status = false;
+        newState.modal.received = true;
         return newState;
     }
     return state;
@@ -117,7 +118,7 @@ class LoadCars extends React.Component {
             return (
                 <tbody>
                     {items.map(item => (
-                        <Car id={item.id} carIsName={item.carIsName}  licensePlate={item.licensePlate} seat={item.seat} yearOfManufacture={item.yearOfManufacture} status={item.status}/>
+                        <Car id={item.id} carIsName={item.carIsName} licensePlate={item.licensePlate} seat={item.seat} yearOfManufacture={item.yearOfManufacture} status={item.status} />
                     ))}
                 </tbody>
             );
@@ -163,19 +164,18 @@ class Car extends React.Component {
             adminName: Cookies.get('adminName'),
             adminToken: Cookies.get('adminToken'),
         };
-        console.log(this.state.adminId);
         this.MoreClick = this.MoreClick.bind(this);
     }
     MoreClick() {
-        console.log(this.props.tripCode);
-        store.dispatch({ type: 'UPDATETRIPCODE', tripCode: this.props.id });
+        console.log(this.props.id);
+        store.dispatch({ type: 'UPDATECARID', carId: this.props.id });
     };
     render() {
         return (
             <>
 
                 <tr>
-                    <th scope="row">{this.props.carId}</th>
+                    <th scope="row">{this.props.id}</th>
                     <th>{this.props.carIsName}</th>
                     <th>{this.props.licensePlate}</th>
                     <th>{this.props.seat}</th>
@@ -209,16 +209,22 @@ class Modal extends React.Component {
             adminName: Cookies.get('adminName'),
             adminToken: Cookies.get('adminToken'),
             editMode: false,
-            tripInfomation: {},
-            tripCode: null,
+            carInfomation: [],
+            carId: null
         };
-        // this.PreviousPage = this.PreviousPage.bind(this);
-        // this.NextPage = this.NextPage.bind(this);
         this.EditClick = this.EditClick.bind(this);
         this.Loop = this.Loop.bind(this);
     }
-
+    IsMounted = false;
+    componentWillMount() {
+        this.IsMounted = false;
+        // axios.get("/adminLoadCars", { fileName: "upload/21-photoRegistration.jpg" })
+        //     .then(res => {
+        //         console.log(res)
+        //     });
+    }
     componentDidMount() {
+        this.IsMounted = true;
         this.Loop();
     }
 
@@ -226,25 +232,46 @@ class Modal extends React.Component {
         this.setState({
             editMode: !this.state.editMode
         })
-        // store.dispatch({ type: 'EDITMODE' });
     }
 
     Loop() {
         setTimeout(
             function () {
-                if (this.state.tripCode != null) {
-                    fetch("/adminLoadCars?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&tripCode=" + this.state.tripCode)
-                        .then(res => res.json())
-                        .then(
-                            (result) => {
+                if (this.IsMounted)
+                    if (this.state.carId != null) {
+                        this.IsMounted = false;
+                        var carInfo = {
+                            adminId: this.state.adminId,
+                            adminName: this.state.adminName,
+                            adminToken: this.state.adminToken,
+                            carId: this.state.carId
+                        };
+                        axios.post("/adminLoadCarInfo", carInfo)
+                            .then(res => {
                                 this.setState({
-                                    tripInfomation: result
+                                    carInfomation: res.data
                                 });
-                            },
-                            (error) => {
-                            }
-                        )
-                }
+                                // axios.get("/adminLoadCars", { fileName: this.state.carInfomation.photoLinkRegistrationCar })
+                                //     .then(res => {
+                                //         this.setState({
+                                //             photoRegistrationsrc: res.data
+                                //         });
+                                //     })
+                                // axios.post("/adminLoadCars", { fileName: this.state.carInfomation.photoLinkphotoRegistryCar })
+                                //     .then(res => {
+                                //         this.setState({
+                                //             photoRegistrysrc: res.data
+                                //         });
+                                //     })
+                                // axios.post("/adminLoadCars", { fileName: fileName })
+                                //     .then(res => {
+                                //         this.setState({
+                                //             photoInsurancesrc: res.data
+                                //         });
+                                //     })
+
+                            })
+                    }
                 this.Loop();
             }
                 .bind(this),
@@ -252,53 +279,222 @@ class Modal extends React.Component {
         );
     }
 
+    onFileChange = event => {
+        console.log(event.target.files[0]);
+        this.setState({ [event.target.name]: event.target.files[0] });
+
+        var name = event.target.name + "src";
+        var file = event.target.files[0];
+        var reader = new FileReader();
+        var url = reader.readAsDataURL(file);
+
+        reader.onloadend = function (e) {
+            this.setState({
+                [name]: [reader.result]
+            })
+            console.log(url)
+        }.bind(this);
+    };
+
     render() {
         store.subscribe(() => {
-            if (store.getState().modal.status == true) {
+            if (store.getState().modal.received == false) {
                 var cpage = store.getState();
-                store.dispatch({ type: 'RECEIVEDTRIPCODE' });
-                console.log(cpage.modal.tripCode)
+                store.dispatch({ type: 'RECEIVEDCARID' });
+                console.log("da nhan carID "+cpage.modal.carId)
                 this.setState({
-                    tripCode: cpage.modal.tripCode
+                    carId: cpage.modal.carId
                 })
             }
         }
         );
-        var departureTime=new Date(this.state.tripInfomation.departureTime).toLocaleDateString("en-US",{year: 'numeric', month: '2-digit',day: '2-digit'});
-        // var departureTime=new Date(this.state.tripInfomation.departureTime).toISOString();
-        // var departureTimeDate=departureTime.getFullYear()+"-"+departureTime.getMonth()+"-"+departureTime.getDay()+"T"+departureTime.getHours()+":"+departureTime.getMinutes();
-        console.log(departureTime);
+
         return (
             <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-xl">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="exampleModalLabel">{this.state.tripInfomation.tripId} {this.state.tripInfomation.tripCode}</h5>
+                            <h5 class="modal-title" id="exampleModalLabel">{this.state.carInfomation.id}</h5>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
                         <div class="modal-body">
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item"><div class="row"><div class="col-3">From</div>{this.state.editMode ? <textarea type="text" class="form-control col-5" rows="3" value={this.state.tripInfomation.tripFrom}></textarea> : <div class="col">{this.state.tripInfomation.tripFrom}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">To</div>{this.state.editMode ? <textarea type="text" class="form-control col-5" rows="3" value={this.state.tripInfomation.tripTo}></textarea> : <div class="col">{this.state.tripInfomation.tripTo}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Departure Time</div>{this.state.editMode ? <input type="datetime-local" class="form-control col-5" value={moment(this.state.tripInfomation.departureTime).format('YYYY-MM-DDTHH:SS')}></input> : <div class="col">{new Date(this.state.tripInfomation.departureTime).toLocaleDateString("vi-VN",{year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'})}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Method of Receiveing Money</div>{this.state.editMode ? <select class="form-control col-3" id="exampleFormControlSelect1"> <option>The driver takes the money</option> <option>Transfer</option> </select> : <div class="col">{this.state.tripInfomation.methodOfReceivingMoney}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Range Of Verhicle</div>{this.state.editMode ? <input type="text" class="form-control col-5" value={this.state.tripInfomation.rangeOfVehicle}></input> : <div class="col">{this.state.tripInfomation.rangeOfVehicle}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Price To Buy Now</div>{this.state.editMode ? <input type="number" class="form-control col-5" value={this.state.tripInfomation.priceToBuyNow}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceToBuyNow)}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Price Start</div>{this.state.editMode ? <input type="number" class="form-control col-5" value={this.state.tripInfomation.priceStart}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceStart)}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Price Bid Current</div>{this.state.editMode ? <input type="number" class="form-control col-5" value={this.state.tripInfomation.priceBidCurrent}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceBidCurrent)}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Id Last User Bid</div>{this.state.editMode ? <input type="text" class="form-control col-5" value={this.state.tripInfomation.idLastUserBid}></input> : <div class="col">{this.state.tripInfomation.idLastUserBid}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">End Bid</div>{this.state.editMode ? <input type="text" class="form-control col-5" value={this.state.tripInfomation.endBid}></input> : <div class="col">{this.state.tripInfomation.endBid}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Price Place Bid</div>{this.state.editMode ? <input type="number" class="form-control col-5" value={new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.pricePlaceBid)}></input> : <div class="col">{this.state.tripInfomation.pricePlaceBid}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Customer Is FullName</div>{this.state.editMode ? <input type="text" class="form-control col-5" value={this.state.tripInfomation.customerIsFullName}></input> : <div class="col">{this.state.tripInfomation.customerIsFullName}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Customer Is Phone</div>{this.state.editMode ? <input type="number" class="form-control col-5" value={this.state.tripInfomation.customerIsPhone}></input> : <div class="col">{this.state.tripInfomation.customerIsPhone}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Time Open On Market</div>{this.state.editMode ? <input type="datetime-local" class="form-control col-5" value={moment(this.state.tripInfomation.timeOpenOnMarket).format('YYYY-MM-DDTHH:SS')}></input> : <div class="col">{new Date(this.state.tripInfomation.timeOpenOnMarket).toLocaleDateString("vi-VN",{year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'})}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Guest Price</div>{this.state.editMode ? <input type="number" class="form-control col-5" value={this.state.tripInfomation.guestPrice}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.guestPrice)}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Trip Type</div>{this.state.editMode ? <input type="text" class="form-control col-5" value={this.state.tripInfomation.tripType}></input> : <div class="col">{this.state.tripInfomation.tripType}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Id User Posted</div>{this.state.editMode ? <input type="text" class="form-control col-5" value={this.state.tripInfomation.idUserPosted}></input> : <div class="col">{this.state.tripInfomation.idUserPosted}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Datetime Posted</div>{this.state.editMode ? <input type="datetime-local" class="form-control col-5" value={moment(this.state.tripInfomation.dateTimePosted).format('YYYY-MM-DDTHH:SS')}></input> : <div class="col">{new Date(this.state.tripInfomation.dateTimePosted).toLocaleDateString("vi-VN",{year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'})}</div>}</div></li>
-                            </ul>
+
+                            <div class="form-row">
+                                <div class="col-md-4">
+                                    Car Is Name
+                                {this.state.editMode ?
+                                        <input type="text" class="form-control" id="carisname" placeholder={this.state.carInfomation.carIsName} name="carIsName" onChange={this.handleChange} />
+                                        :
+                                        <div>{this.state.carInfomation.carIsName}</div>}
+                                </div>
+                                <div class="form-group col-md-4">
+                                    License Plate
+                                    {this.state.editMode ?
+                                        <input type="text" class="form-control" id="licenseplate" placeholder={this.state.carInfomation.licensePlate} name="licensePlate" onChange={this.handleChange} />
+                                        :
+                                        <div>{this.state.carInfomation.licensePlate}</div>}
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-2">
+                                    Vehicle
+                                        {this.state.editMode ?
+                                        <select id="seat" class="form-control" value={this.state.carInfomation.seat} name="seat" onChange={this.handleChange}>
+                                            <option selected>Choose...</option>
+                                            <option value="4">4-seater</option>
+                                            <option value="5">5-seater</option>
+                                            <option value="7">7-seater</option>
+                                            <option value="16">16-seater</option>
+                                            <option value="29">29-seater</option>
+                                            <option value="35">35-seater</option>
+                                            <option value="45">45-seater</option>
+                                        </select>
+                                        :
+                                        <div>{this.state.carInfomation.seat}-seater</div>}
+                                </div>
+                                <div class="form-group col-md-3">
+                                    Year of manufacture
+                                    {this.state.editMode ?
+                                        <input type="number" class="form-control" id="yearofmanufacture" placeholder={this.state.carInfomation.yearOfManuFacture} name="yearOfManuFacture" onChange={this.handleChange} />
+                                        :
+                                        <div>{this.state.carInfomation.yearOfManuFacture}</div>}
+                                </div>
+                                <div class="form-group col-md-2">
+                                    Status
+                                    {this.state.editMode ?
+                                        <select id="status" class="form-control" name="status" value={this.state.carInfomation.status} onChange={this.handleChange}>
+                                            <option selected>Choose...</option>
+                                            <option value="0">Not active</option>
+                                            <option value="1">Active</option>
+                                            <option value="2">Suspende</option>
+                                        </select>
+                                        :
+                                        <div>{this.state.carInfomation.status}</div>}
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <label class="col-md-4" for="photoRegistration">Photo registration</label>
+                                <label class="col-md-4" for="photoRegistry">Photo registry</label>
+                                <label class="col-md-4" for="photoInsurance">Photo Insurance</label>
+                            </div>
+                            <div class="form-row">
+                                <img src={this.state.photoRegistrationsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoRegistrysrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoInsurancesrc} class="img-fluid col-md-4" alt="No image" />
+                            </div>
+                            <div class="form-row">
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoRegistration" name="photoRegistration" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoRegistration">Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+
+                                </div>
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoRegistry" name="photoRegistry" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoRegistry">Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+
+                                </div>
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoInsurance" name="photoInsurance" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoInsurance">Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-group col-md-4" for="photoLeftCar">Photo Left Car</label>
+                                <label class="form-group col-md-4" for="photoRightCar">Photo Right Car</label>
+                                <label class="form-group col-md-4" for="photoFrontCar">Photo Front Car</label>
+                            </div>
+                            <div class="form-row">
+                                <img src={this.state.photoLeftCarsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoRightCarsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoFrontCarsrc} class="img-fluid col-md-4" alt="No image" />
+                            </div>
+                            <div class="form-row">
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoLeftCar" name="photoLeftCar" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoLeftCar" >Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+                                </div>
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoRightCar" name="photoRightCar" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoRightCar">Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+                                </div>
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoFrontCar" name="photoFrontCar" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoFrontCar">Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-group col-md-4" for="photoBehindCar">Photo Behind Car</label>
+                                <label class="form-group col-md-4" for="photoDriverIsLicense">Photo Driver Is License</label>
+                                <label class="form-group col-md-4" for="photoIdentityCard">Photo Identity Card</label>
+                            </div>
+                            <div class="form-row">
+                                <img src={this.state.photoBehindCarsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoDriverIsLicensesrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoIdentityCardsrc} class="img-fluid col-md-4" alt="No image" />
+                            </div>
+                            <div class="form-row">
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoBehindCar" name="photoBehindCar" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoBehindCar">Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+                                </div>
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoDriverIsLicense" name="photoDriverIsLicense" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoDriverIsLicense">Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+                                </div>
+                                <div class="custom-file col-md-4">
+                                    {this.state.editMode ?
+                                        <>
+                                            <input type="file" class="custom-file-input" id="photoIdentityCard" name="photoIdentityCard" onChange={this.onFileChange} />
+                                            <label class="custom-file-label" for="photoIdentityCard">Choose file</label>
+                                        </>
+                                        :
+                                        <div></div>}
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onClick={this.onFileUpload}>Create Car Infomation</button>
                         </div>
                         <div class="modal-footer">
                             <div class="btn-group" role="group" aria-label="Basic example">
