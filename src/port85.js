@@ -119,21 +119,18 @@ app.get('/login', function (req, res) {
     });
 });
 
-async function CheckAuthentication(user_id, user_name, token) {
-    // console.log('Check token ' + user_name);
-    // var tokenlive = false;
-    // conn.query("SELECT id,username,token FROM accounts WHERE id = '" + user_id + "';", await function (err, resultAuthentication, fields) {
-    //     if (err) throw err;
-    //     console.log(' ' + resultAuthentication.length);
-    //     if (resultAuthentication.length > 0) {
-    //         if (user_name == resultAuthentication[0].username && token == resultAuthentication[0].token && token != null && token != "") {
-    //             tokenlive = true;
-    //         }
-    //     }
-    //     console.log(tokenlive);
-    //     return tokenlive;
-    // });
+async function InsertTransaction(transactionAmout, transactionNote, accountId) {
+    return new Promise(function (resolve, reject) {
+        var success = false;
+        conn.query("INSERT INTO transactionhistory (transactionAmout,transactionNote,transactionDateTime,accountId) VALUES ('"+transactionAmout+"','"+transactionNote+"','"+dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss")+"','"+accountId+"');", function (err, resultAuthentication, fields) {
+            if (err) throw err;
+            console.log(success);
+            resolve(success);
+        });
+    })
+}
 
+async function CheckAuthentication(user_id, user_name, token) {
     return new Promise(function (resolve, reject) {
         console.log('Check token ' + user_name);
         var tokenlive = false;
@@ -910,12 +907,14 @@ app.get('/addBalance', async function (req, res) {
                 var amountAdd = currentBalance + amountInt;
                 conn.query("UPDATE accounts SET currentBalance='" + amountAdd + "' WHERE username='" + userName + "' AND id=" + idUser + ";", async function (err, result, fields) {
                     if (err) throw err;
-                    var obj = {
-                        status: "OK",
-                        message: "Add balance success"
+                    if(InsertTransaction(amountInt,"Admin add",idUser)){
+                        var obj = {
+                            status: "OK",
+                            message: "Add balance success"
+                        }
+                        console.log(JSON.stringify(obj));
+                        res.send(JSON.stringify(obj));    
                     }
-                    console.log(JSON.stringify(obj));
-                    res.send(JSON.stringify(obj));
                 });
 
             }
@@ -930,6 +929,8 @@ app.get('/addBalance', async function (req, res) {
 
     }
 });
+
+
 
 app.post('/adminLoadMarket', async function (req, res) {
     var adminId = req.param('adminId');
@@ -1745,6 +1746,28 @@ app.post('/adminApproveTrip', async function (req, res) {
             }
         });
 
+    }
+});
+
+app.post('/userTransactionHistory', async function (req, res) {
+    var accountId = req.param('accountId');
+    var accountUsername = req.param('accountUsername');
+    var accountToken = req.param('accountToken');
+    var page = req.param('page');
+
+    if (await CheckAuthentication(accountId, accountUsername, accountToken, null)) {
+        console.log('Get User Transaction History ' + page);
+        conn.query("SELECT * FROM transactionHistory WHERE accountId='" + accountId + "';", function (err, result, fields) {
+            if (err) {
+                var obj = {
+                    status: "ERROR",
+                    message: "Lỗi không xác định 0"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+            if (err) throw err;
+        });
     }
 });
 
