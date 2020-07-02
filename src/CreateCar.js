@@ -179,30 +179,30 @@ export default class CreateCar extends React.Component {
             })
     };
 
-    fileData = () => {
+    // fileData = () => {
 
-        if (this.state.selectedFile) {
+    //     if (this.state.selectedFile) {
 
-            return (
-                <div>
-                    <h2>File Details:</h2>
-                    <p>File Name: {this.state.selectedFile.name}</p>
-                    <p>File Type: {this.state.selectedFile.type}</p>
-                    <p>
-                        Last Modified:{" "}
-                        {this.state.selectedFile.lastModifiedDate.toDateString()}
-                    </p>
-                </div>
-            );
-        } else {
-            return (
-                <div>
-                    <br />
-                    <h4>Choose before Pressing the Upload button</h4>
-                </div>
-            );
-        }
-    };
+    //         return (
+    //             <div>
+    //                 <h2>File Details:</h2>
+    //                 <p>File Name: {this.state.selectedFile.name}</p>
+    //                 <p>File Type: {this.state.selectedFile.type}</p>
+    //                 <p>
+    //                     Last Modified:{" "}
+    //                     {this.state.selectedFile.lastModifiedDate.toDateString()}
+    //                 </p>
+    //             </div>
+    //         );
+    //     } else {
+    //         return (
+    //             <div>
+    //                 <br />
+    //                 <h4>Choose before Pressing the Upload button</h4>
+    //             </div>
+    //         );
+    //     }
+    // };
 
     componentDidMount() {
     }

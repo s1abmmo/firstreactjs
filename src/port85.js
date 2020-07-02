@@ -9,6 +9,8 @@ var path = require('path');
 var crypto = require('crypto');
 var multer = require('multer');
 var fs = require('fs');
+var cookieParser = require('cookie-parser');
+app.use(cookieParser());
 
 function generate_token(length) {
     //edit the token allowed characters
@@ -33,9 +35,9 @@ function generate_tripCode(length) {
 
 var conn = mysql.createConnection({
     database: 's1abmmo',
-    host: "18.140.71.158",
-    user: "s1abmmo",
-    password: "s1abmmo"
+    host: "127.0.0.1",
+    user: "root",
+    password: "s1abmmo1.A"
 });
 conn.connect(function (err) {
     if (err) throw err;
@@ -70,7 +72,7 @@ conn.connect(function (err) {
         if (err)
             console.log(err.message)
     });
-    conn.query("CREATE TABLE cars ( id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, carIsName VARCHAR(100),licensePlate NVARCHAR(20),seat VARCHAR(2),yearOfManufacture VARCHAR(4),status VARCHAR(1),photoLinkRegistrationCar VARCHAR(1000),photoLinkRegistryCar VARCHAR(1000),photoLinkInsuranceCar VARCHAR(1000),photoLinkLeftCar VARCHAR(1000),photoLinkRightCar VARCHAR(1000),photoLinkFrontCar VARCHAR(1000),photoLinkBehindCar VARCHAR(1000),photoLinkDriverIsLicense VARCHAR(1000),photoLinkIdentityCard VARCHAR(1000),dateTimePosted DATETIME);", function (err, result, fields) {
+    conn.query("CREATE TABLE cars ( id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, carIsName VARCHAR(100),licensePlate NVARCHAR(20),seat VARCHAR(2),yearOfManufacture VARCHAR(4),status VARCHAR(1),photoRegistration VARCHAR(1000),photoRegistry VARCHAR(1000),photoInsurance VARCHAR(1000),photoLeftCar VARCHAR(1000),photoRightCar VARCHAR(1000),photoFrontCar VARCHAR(1000),photoBehindCar VARCHAR(1000),photoDriverIsLicense VARCHAR(1000),photoIdentityCard VARCHAR(1000),dateTimePosted DATETIME);", function (err, result, fields) {
         if (!err)
             console.log("Create table cars success !");
         if (err)
@@ -1003,7 +1005,7 @@ app.get('/marketCountPage', async function (req, res) {
     }
 });
 
-app.get('/adminLoadTripInfomation', async function (req, res) {
+app.post('/adminLoadTripInfomation', async function (req, res) {
     var adminId = req.param('adminId');
     var adminName = req.param('adminName');
     var adminToken = req.param('adminToken');
@@ -1091,7 +1093,7 @@ app.post('/createCarInfomation', async function (req, res) {
     var seat = req.param('seat');
     var yearOfManuFacture = req.param('yearOfManuFacture');
     var status = req.param('status');
-    var dateTimeCreated;
+    var dateTimeCreated = Date.now();
     //console.log(rowStart + "," + maxRowInPage);
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
         conn.query("INSERT INTO cars (carIsName,licensePlate,seat,yearOfManuFacture,status) VALUES ('" + carIsName + "','" + licensePlate + "','" + seat + "','" + yearOfManuFacture + "','" + status + "');", function (err, result, fields) {
@@ -1100,6 +1102,45 @@ app.post('/createCarInfomation', async function (req, res) {
                 status: "OK",
                 message: "Thêm thông tin xe thành công",
                 idCar: result.insertId
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+    }
+});
+
+app.post('/adminEditCarInfomation', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+
+    var objList = [];
+
+    var carId = req.param('carId');
+    var carIsName = req.param('carIsName');
+    if (carIsName != null)
+        objList.push("carIsName='" + carIsName + "'");
+    var licensePlate = req.param('licensePlate');
+    if (licensePlate != null)
+        objList.push("licensePlate='" + licensePlate + "'");
+    var seat = req.param('seat');
+    if (seat != null)
+        objList.push("seat='" + seat + "'");
+    var yearOfManuFacture = req.param('yearOfManuFacture');
+    if (yearOfManuFacture != null)
+        objList.push("yearOfManuFacture='" + yearOfManuFacture + "'");
+    var status = req.param('status');
+    if (status != null)
+        objList.push("status='" + status + "'");
+    var mysqlquery = objList.join(",");
+    var dateTimeCreated;
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        console.log("UPDATE cars SET " + mysqlquery + " WHERE id=" + carId + ";");
+        conn.query("UPDATE cars SET " + mysqlquery + " WHERE id=" + carId + ";", function (err, result, fields) {
+            if (err) throw err;
+            var obj = {
+                status: "OK",
+                message: "Sửa tin xe thành công",
             }
             console.log(JSON.stringify(obj));
             res.send(JSON.stringify(obj));
@@ -1130,7 +1171,13 @@ var storage = multer.diskStorage({
     },
     filename: async function (req, file, callback) {
         if (await CheckAuthenticationAdmin(req.param('adminId'), req.param('adminName'), req.param('adminToken'), null)) {
-            callback(null, req.param('carId') + '-' + file.fieldname + path.extname(file.originalname));
+            // var queryText = "UPDATE cars SET photoLinkRegistrationCar='upload/" + carId + "-photoRegistration',photoLinkRegistryCar='upload/" + carId + "-photoRegistry',photoLinkInsuranceCar='upload/" + carId + "-photoInsurance',photoLinkLeftCar='upload/" + carId + "-photoLeftCar',photoLinkRightCar='upload/" + carId + "-photoRightCar',photoLinkFrontCar='upload/" + carId + "-photoFrontCar',photoLinkBehindCar='upload/" + carId + "-photoBehindCar',photoLinkDriverIsLicense='upload/" + carId + "-photoDriverIsLicense',photoLinkIdentityCard='upload/" + carId + "-photoIdentityCard' WHERE id=" + carId + ";";
+            var queryText = "UPDATE cars SET " + file.fieldname + "='" + req.param('carId') + '-' + file.fieldname + path.extname(file.originalname) + "' WHERE id=" + req.param('carId') + ";";
+            console.log(queryText);
+            conn.query(queryText, async function (err, result, fields) {
+                if (err) throw err;
+                callback(null, req.param('carId') + '-' + file.fieldname + path.extname(file.originalname));
+            });
         };
     }
 });
@@ -1145,17 +1192,12 @@ app.post('/photos', upload, function (req, res) {
     console.log(adminId + "_" + adminName + "_" + adminToken);
     console.log(req.body);
     console.log(req.files);
-    var queryText = "UPDATE cars SET photoLinkRegistrationCar='upload/" + carId + "-photoRegistration',photoLinkRegistryCar='upload/" + carId + "-photoRegistry',photoLinkInsuranceCar='upload/" + carId + "-photoInsurance',photoLinkLeftCar='upload/" + carId + "-photoLeftCar',photoLinkRightCar='upload/" + carId + "-photoRightCar',photoLinkFrontCar='upload/" + carId + "-photoFrontCar',photoLinkBehindCar='upload/" + carId + "-photoBehindCar',photoLinkDriverIsLicense='upload/" + carId + "-photoDriverIsLicense',photoLinkIdentityCard='upload/" + carId + "-photoIdentityCard' WHERE id=" + carId + ";";
-    console.log(queryText);
-    conn.query(queryText, async function (err, result, fields) {
-        if (err) throw err;
-        var obj = {
-            status: "OK",
-            message: "Upload success"
-        }
-        console.log(JSON.stringify(obj));
-        res.send(JSON.stringify(obj));
-    });        
+    var obj = {
+        status: "OK",
+        message: "Upload success"
+    }
+    console.log(JSON.stringify(obj));
+    res.send(JSON.stringify(obj));
 });
 
 // app.post('/photos', function (req, res) {
@@ -1379,7 +1421,7 @@ app.post('/adminSuspendeTrip', async function (req, res) {
     var tripId = req.param('tripId');
     var tripCode = req.param('tripCode');
 
-    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, "permissionSuspendeTrip")) {
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, "permissionSuspendTrip")) {
         console.log('Suspende ' + tripCode);
         conn.query("UPDATE markettrips SET status='1' WHERE tripId = '" + tripId + "' AND tripCode = '" + tripCode + "';", function (err, result, fields) {
             if (err) {
@@ -1408,7 +1450,6 @@ app.post('/adminLoadTransactionHistory', async function (req, res) {
     var adminToken = req.param('adminToken');
     var page = req.param('page');
     var rowStart = ((page - 1) * maxRowInPage);
-    var tripFrom = req.param('adminToken');
 
     if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
         conn.query("SELECT * FROM transactionhistory LIMIT " + rowStart + "," + maxRowInPage + ";", function (err, result, fields) {
@@ -1503,10 +1544,17 @@ app.post('/adminEditTrip', async function (req, res) {
     }
 });
 
-app.get('/adminCarImage', function (req, res) {
+app.get('/adminCarImage', async function (req, res) {
+    var adminId = req.cookies['adminId'];
+    var adminName = req.cookies['adminName'];
+    var adminToken = req.cookies['adminToken'];
+
     var fileName = req.param('fileName');
-    var pathFile = path.join(__dirname, 'upload');
-    res.sendFile(pathFile + fileName);
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        var pathFile = path.join(__dirname, 'upload');
+        var pathFile1 = path.join(pathFile, fileName);
+        res.sendFile(pathFile1);
+    };
 });
 
 app.post('/adminLoadCarInfo', async function (req, res) {
@@ -1612,6 +1660,85 @@ app.post('/adminLoadPendingTripInfomation', async function (req, res) {
                 var obj = {
                     status: "ERROR",
                     message: "Không tìm thấy"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+        });
+
+    }
+});
+
+app.post('/adminApproveTrip', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var tripId = req.param('tripId');
+    var tripCode = req.param('tripCode');
+
+    var tripFrom = req.param('tripFrom');
+    var tripTo = req.param('tripTo');
+    var departureTime = req.param('departureTime');
+    var methodOfReceivingMoney = req.param('methodOfReceivingMoney');
+    var rangeOfVehicle = req.param('rangeOfVehicle');
+    var priceStart = req.param('priceStart');
+    var customerIsFullName = req.param('customerIsFullName');
+    var customerIsPhone = req.param('customerIsPhone');
+    var timeOpenOnMarket = req.param('timeOpenOnMarket');
+    var guestPrice = req.param('guestPrice');
+    var priceToSellNow = req.param('priceToSellNow');
+    var tripType = req.param('tripType');
+    var pricePlaceBid = req.param('pricePlaceBid');
+    var status = req.param('status');
+
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        console.log('Approval ' + tripId + ' ' + tripCode);
+        conn.query("SELECT * FROM tripsPending WHERE tripId='" + tripId + "' AND tripCode = '" + tripCode + "' AND approved='false';", function (err, result, fields) {
+            if (err) {
+                var obj = {
+                    status: "ERROR",
+                    message: "Lỗi không xác định 0"
+                }
+                console.log(JSON.stringify(obj));
+                res.send(JSON.stringify(obj));
+            }
+            if (err) throw err;
+            console.log('Result length ' + result.length);
+            if (result.length > 0) {
+                var queryString = "INSERT INTO marketTrips (tripCode,customerIsFullName,customerIsPhone,rangeOfVehicle,guestPrice,priceToBuyNow,priceStart,timeOpenOnMarket,tripFrom,tripTo,departureTime,methodOfReceivingMoney,pricePlaceBid,endBid,tripType,dateTimePosted,idUserPosted,status) VALUES ('" + tripCode + "','" + customerIsFullName + "','" + customerIsPhone + "','" + rangeOfVehicle + "','" + guestPrice + "','" + priceStart + "','" + priceToSellNow + "','" + dateFormat(timeOpenOnMarket, "yyyy-mm-dd HH:MM:ss") + "','" + tripFrom + "','" + tripTo + "','" + dateFormat(departureTime, "yyyy-mm-dd HH:MM:ss") + "','" + methodOfReceivingMoney + "','" + pricePlaceBid + "','false','" + tripType + "','" + dateFormat(result[0].dateTimePosted, "yyyy-mm-dd HH:MM:ss") + "','" + result[0].idUserPosted + "','" + status + "');";
+                console.log(queryString);
+                conn.query(queryString, function (err, result, fields) {
+                    if (err) {
+                        var obj = {
+                            status: "ERROR",
+                            message: "Lỗi không xác định 1"
+                        }
+                        console.log(JSON.stringify(obj) + err.message);
+                        res.send(JSON.stringify(obj));
+                    }
+                    if (err) throw err;
+                    conn.query("UPDATE tripsPending SET approved='true' WHERE tripId='" + tripId + "' AND tripCode = '" + tripCode + "' AND approved='false';", function (err, result, fields) {
+                        if (err) {
+                            var obj = {
+                                status: "ERROR",
+                                message: "Lỗi không xác định 2"
+                            }
+                            console.log(JSON.stringify(obj));
+                            res.send(JSON.stringify(obj));
+                        }
+                        if (err) throw err;
+                        var obj = {
+                            status: "OK",
+                            message: "Xét duyệt thành công"
+                        }
+                        console.log(JSON.stringify(obj));
+                        res.send(JSON.stringify(obj));
+                    });
+                });
+            } else {
+                var obj = {
+                    status: "ERROR",
+                    message: "Chuyến chờ xét duyệt không tồn tại"
                 }
                 console.log(JSON.stringify(obj));
                 res.send(JSON.stringify(obj));

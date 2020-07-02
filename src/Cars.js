@@ -157,14 +157,45 @@ class Car extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            error: null,
-            isLoaded: false,
-            items: [],
             adminId: Cookies.get('adminId'),
             adminName: Cookies.get('adminName'),
             adminToken: Cookies.get('adminToken'),
         };
+        this.Active = this.Active.bind(this);
+        this.Suspende = this.Suspende.bind(this);
         this.MoreClick = this.MoreClick.bind(this);
+    }
+    Active() {
+        axios.post("/adminEditCarInfomation", {
+            adminId: this.state.adminId,
+            adminName: this.state.adminName,
+            adminToken: this.state.adminToken,
+            carId:this.props.id,
+            status: 1
+        })
+            .then(res => {
+                console.log(res);
+                console.log(res.data);
+                if (res.data.status == "OK") {
+                }
+            })
+
+    }
+    Suspende() {
+        axios.post("/adminEditCarInfomation", {
+            adminId: this.state.adminId,
+            adminName: this.state.adminName,
+            adminToken: this.state.adminToken,
+            carId:this.props.id,
+            status: 2
+        })
+            .then(res => {
+                console.log(res);
+                console.log(res.data);
+                if (res.data.status == "OK") {
+                }
+            })
+
     }
     MoreClick() {
         console.log(this.props.id);
@@ -187,8 +218,8 @@ class Car extends React.Component {
                                 Action
                                 </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <a class="dropdown-item" href="#" >Approve</a>
-                                <a class="dropdown-item" href="#" >Suspende</a>
+                                <a class="dropdown-item" href="#" onClick={this.Active}>Active</a>
+                                <a class="dropdown-item" href="#" onClick={this.Suspende}>Suspende</a>
                             </div>
                         </div>
                     </th>
@@ -213,19 +244,7 @@ class Modal extends React.Component {
             carId: null
         };
         this.EditClick = this.EditClick.bind(this);
-        this.Loop = this.Loop.bind(this);
-    }
-    IsMounted = false;
-    componentWillMount() {
-        this.IsMounted = false;
-        // axios.get("/adminLoadCars", { fileName: "upload/21-photoRegistration.jpg" })
-        //     .then(res => {
-        //         console.log(res)
-        //     });
-    }
-    componentDidMount() {
-        this.IsMounted = true;
-        this.Loop();
+        this.handleChange = this.handleChange.bind(this);
     }
 
     EditClick() {
@@ -234,56 +253,20 @@ class Modal extends React.Component {
         })
     }
 
-    Loop() {
-        setTimeout(
-            function () {
-                if (this.IsMounted)
-                    if (this.state.carId != null) {
-                        this.IsMounted = false;
-                        var carInfo = {
-                            adminId: this.state.adminId,
-                            adminName: this.state.adminName,
-                            adminToken: this.state.adminToken,
-                            carId: this.state.carId
-                        };
-                        axios.post("/adminLoadCarInfo", carInfo)
-                            .then(res => {
-                                this.setState({
-                                    carInfomation: res.data
-                                });
-                                // axios.get("/adminLoadCars", { fileName: this.state.carInfomation.photoLinkRegistrationCar })
-                                //     .then(res => {
-                                //         this.setState({
-                                //             photoRegistrationsrc: res.data
-                                //         });
-                                //     })
-                                // axios.post("/adminLoadCars", { fileName: this.state.carInfomation.photoLinkphotoRegistryCar })
-                                //     .then(res => {
-                                //         this.setState({
-                                //             photoRegistrysrc: res.data
-                                //         });
-                                //     })
-                                // axios.post("/adminLoadCars", { fileName: fileName })
-                                //     .then(res => {
-                                //         this.setState({
-                                //             photoInsurancesrc: res.data
-                                //         });
-                                //     })
+    handleChange(event) {
+        const target = event.target;
+        const name = target.name;
 
-                            })
-                    }
-                this.Loop();
-            }
-                .bind(this),
-            1000
-        );
+        this.setState({
+            [name]: target.value
+        });
     }
 
     onFileChange = event => {
         console.log(event.target.files[0]);
-        this.setState({ [event.target.name]: event.target.files[0] });
+        this.setState({ [event.target.name+ "src1"]: event.target.files[0] });
 
-        var name = event.target.name + "src";
+        var name = event.target.name+ "src";
         var file = event.target.files[0];
         var reader = new FileReader();
         var url = reader.readAsDataURL(file);
@@ -296,15 +279,145 @@ class Modal extends React.Component {
         }.bind(this);
     };
 
+    onFileUpload = () => {
+        this.setState({
+            editMode: !this.state.editMode
+        })
+        axios.post("/adminEditCarInfomation", {
+            adminId: this.state.adminId,
+            adminName: this.state.adminName,
+            adminToken: this.state.adminToken,
+            carId: this.state.carId,
+            carIsName: this.state.carIsName,
+            licensePlate: this.state.licensePlate,
+            seat: this.state.seat,
+            yearOfManuFacture: this.state.yearOfManuFacture,
+            status: this.state.status
+        })
+            .then(res => {
+                console.log(res);
+                console.log(res.data);
+                if (res.data.status == "OK") {
+                    const formData = new FormData();
+                    formData.append(
+                        "adminId", this.state.adminId
+                    );
+                    formData.append(
+                        "adminName", this.state.adminName
+                    );
+                    formData.append(
+                        "adminToken", this.state.adminToken
+                    );
+                    formData.append(
+                        "carId", this.state.carId
+                    );
+                    console.log(this.state["photoRegistrationsrc"]);
+                    if (this.state["photoRegistrationsrc1"] != null)
+                        formData.append(
+                            "photoRegistration",
+                            this.state["photoRegistrationsrc1"],
+                            this.state["photoRegistrationsrc1"].name
+                        );
+                    if (this.state["photoRegistrysrc1"] != null)
+                        formData.append(
+                            "photoRegistry",
+                            this.state["photoRegistrysrc1"],
+                            this.state["photoRegistrysrc1"].name
+                        );
+                    if (this.state["photoInsurancesrc1"] != null)
+                        formData.append(
+                            "photoInsurance",
+                            this.state["photoInsurancesrc1"],
+                            this.state["photoInsurancesrc1"].name
+                        );
+                    if (this.state["photoLeftCarsrc1"] != null)
+                        formData.append(
+                            "photoLeftCar",
+                            this.state["photoLeftCarsrc1"],
+                            this.state["photoLeftCarsrc1"].name
+                        );
+                    if (this.state["photoRightCarsrc1"] != null)
+                        formData.append(
+                            "photoRightCar",
+                            this.state["photoRightCarsrc1"],
+                            this.state["photoRightCarsrc1"].name
+                        );
+                    if (this.state["photoFrontCarsrc1"] != null)
+                        formData.append(
+                            "photoFrontCar",
+                            this.state["photoFrontCarsrc1"],
+                            this.state["photoFrontCarsrc1"].name
+                        );
+                    if (this.state["photoBehindCarsrc1"] != null)
+                        formData.append(
+                            "photoBehindCar",
+                            this.state["photoBehindCarsrc1"],
+                            this.state["photoBehindCarsrc1"].name
+                        );
+                    if (this.state["photoDriverIsLicensesrc1"] != null)
+                        formData.append(
+                            "photoDriverIsLicense",
+                            this.state["photoDriverIsLicensesrc1"],
+                            this.state["photoDriverIsLicensesrc1"].name
+                        );
+                    if (this.state["photoIdentityCardsrc1"] != null)
+                        formData.append(
+                            "photoIdentityCard",
+                            this.state["photoIdentityCardsrc1"],
+                            this.state["photoIdentityCardsrc1"].name
+                        );
+
+                    axios.post("photos", formData).then(res => {
+                        console.log(res);
+                        console.log(res.data);
+                        if (res.data.status == "OK") {
+                            this.setState({
+                                statusAxios: "OK",
+                                message: res.data.message
+                            });
+                        }else if(res.data.status == "ERROR"){
+                            this.setState({
+                                statusAxios: "ERROR",
+                                message: res.data.message
+                            });
+                        }
+                    });
+
+                }
+            })
+    };
+
+
     render() {
         store.subscribe(() => {
             if (store.getState().modal.received == false) {
                 var cpage = store.getState();
                 store.dispatch({ type: 'RECEIVEDCARID' });
-                console.log("da nhan carID "+cpage.modal.carId)
+                console.log("da nhan carID " + cpage.modal.carId)
                 this.setState({
                     carId: cpage.modal.carId
                 })
+                axios.post("/adminLoadCarInfo", {
+                    adminId: this.state.adminId,
+                    adminName: this.state.adminName,
+                    adminToken: this.state.adminToken,
+                    carId: cpage.modal.carId
+                })
+                    .then(res => {
+                        this.setState({
+                            carInfomation: res.data,
+                            photoRegistration: res.data.photoRegistration,
+                            photoRegistry: res.data.photoRegistry,
+                            photoInsurance: res.data.photoInsurance,
+                            photoLeftCar: res.data.photoLeftCar,
+                            photoRightCar: res.data.photoRightCar,
+                            photoFrontCar: res.data.photoFrontCar,
+                            photoBehindCar: res.data.photoBehindCar,
+                            photoDriverIsLicense: res.data.photoDriverIsLicense,
+                            photoIdentityCard: res.data.photoIdentityCard
+                        });
+                    })
+
             }
         }
         );
@@ -322,26 +435,26 @@ class Modal extends React.Component {
                         <div class="modal-body">
 
                             <div class="form-row">
-                                <div class="col-md-4">
-                                    Car Is Name
+                                <div class="form-group col-md-6">
+                                    Car Is Name:
                                 {this.state.editMode ?
-                                        <input type="text" class="form-control" id="carisname" placeholder={this.state.carInfomation.carIsName} name="carIsName" onChange={this.handleChange} />
+                                        <input type="text" class="form-control" defaultValue={this.state.carInfomation.carIsName} name="carIsName" onChange={this.handleChange} />
                                         :
                                         <div>{this.state.carInfomation.carIsName}</div>}
                                 </div>
-                                <div class="form-group col-md-4">
-                                    License Plate
+                                <div class="form-group col-md-6">
+                                    License Plate:
                                     {this.state.editMode ?
-                                        <input type="text" class="form-control" id="licenseplate" placeholder={this.state.carInfomation.licensePlate} name="licensePlate" onChange={this.handleChange} />
+                                        <input type="text" class="form-control" defaultValue={this.state.carInfomation.licensePlate} name="licensePlate" onChange={this.handleChange} />
                                         :
                                         <div>{this.state.carInfomation.licensePlate}</div>}
                                 </div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group col-md-2">
-                                    Vehicle
+                                <div class="form-group col-md-3">
+                                    Vehicle:
                                         {this.state.editMode ?
-                                        <select id="seat" class="form-control" value={this.state.carInfomation.seat} name="seat" onChange={this.handleChange}>
+                                        <select name="seat" class="form-control" defaultValue={this.state.carInfomation.seat}  onChange={this.handleChange}>
                                             <option selected>Choose...</option>
                                             <option value="4">4-seater</option>
                                             <option value="5">5-seater</option>
@@ -355,23 +468,28 @@ class Modal extends React.Component {
                                         <div>{this.state.carInfomation.seat}-seater</div>}
                                 </div>
                                 <div class="form-group col-md-3">
-                                    Year of manufacture
+                                    Year of manufacture:
                                     {this.state.editMode ?
-                                        <input type="number" class="form-control" id="yearofmanufacture" placeholder={this.state.carInfomation.yearOfManufacture} name="yearOfManufacture" onChange={this.handleChange} />
+                                        <input type="number" class="form-control" defaultValue={this.state.carInfomation.yearOfManufacture} name="yearOfManufacture" onChange={this.handleChange} />
                                         :
                                         <div>{this.state.carInfomation.yearOfManufacture}</div>}
                                 </div>
-                                <div class="form-group col-md-2">
-                                    Status
+                                <div class="form-group col-md-3">
+                                    Status:
                                     {this.state.editMode ?
-                                        <select id="status" class="form-control" name="status" defaultValue={this.state.carInfomation.status} onChange={this.handleChange}>
+                                        <select class="form-control" name="status" defaultValue={this.state.carInfomation.status} onChange={this.handleChange}>
                                             <option selected>Choose...</option>
                                             <option value="0">Not active</option>
                                             <option value="1">Active</option>
                                             <option value="2">Suspende</option>
                                         </select>
                                         :
-                                        <div>{this.state.carInfomation.status}</div>}
+                                        <select class="form-control" name="status" value={this.state.carInfomation.status} onChange={this.handleChange} readOnly>
+                                        <option value="0" disabled={this.state.carInfomation.status=="0" ? null : true}>Not active</option>
+                                        <option value="1" disabled={this.state.carInfomation.status=="1" ? null : true}>Active</option>
+                                        <option value="2" disabled={this.state.carInfomation.status=="2" ? null : true}>Suspende</option>
+                                    </select>
+}
                                 </div>
                             </div>
                             <div class="form-row">
@@ -380,9 +498,9 @@ class Modal extends React.Component {
                                 <label class="col-md-4" for="photoInsurance">Photo Insurance</label>
                             </div>
                             <div class="form-row">
-                                <img src={this.state.photoRegistrationsrc} class="img-fluid col-md-4" alt="No image" />
-                                <img src={this.state.photoRegistrysrc} class="img-fluid col-md-4" alt="No image" />
-                                <img src={this.state.photoInsurancesrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoRegistrationsrc==null ? "/adminCarImage?fileName=" + this.state.photoRegistration : this.state.photoRegistrationsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoRegistrysrc==null ? "/adminCarImage?fileName=" + this.state.photoRegistry : this.state.photoRegistrysrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoRegistrysrc==null ? "/adminCarImage?fileName=" + this.state.photoInsurance : this.state.photoInsurancesrc} class="img-fluid col-md-4" alt="No image" />
                             </div>
                             <div class="form-row">
                                 <div class="custom-file col-md-4">
@@ -422,9 +540,9 @@ class Modal extends React.Component {
                                 <label class="form-group col-md-4" for="photoFrontCar">Photo Front Car</label>
                             </div>
                             <div class="form-row">
-                                <img src={this.state.photoLeftCarsrc} class="img-fluid col-md-4" alt="No image" />
-                                <img src={this.state.photoRightCarsrc} class="img-fluid col-md-4" alt="No image" />
-                                <img src={this.state.photoFrontCarsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoLeftCarsrc==null ? "/adminCarImage?fileName=" + this.state.photoLeftCar : this.state.photoLeftCarsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoRightCarsrc==null ? "/adminCarImage?fileName=" + this.state.photoRightCar : this.state.photoRightCarsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoFrontCarsrc==null ? "/adminCarImage?fileName=" + this.state.photoFrontCar : this.state.photoFrontCarsrc} class="img-fluid col-md-4" alt="No image" />
                             </div>
                             <div class="form-row">
                                 <div class="custom-file col-md-4">
@@ -461,9 +579,9 @@ class Modal extends React.Component {
                                 <label class="form-group col-md-4" for="photoIdentityCard">Photo Identity Card</label>
                             </div>
                             <div class="form-row">
-                                <img src={this.state.photoBehindCarsrc} class="img-fluid col-md-4" alt="No image" />
-                                <img src={this.state.photoDriverIsLicensesrc} class="img-fluid col-md-4" alt="No image" />
-                                <img src={this.state.photoIdentityCardsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoBehindCarsrc==null ? "/adminCarImage?fileName=" + this.state.photoBehindCar : this.state.photoBehindCarsrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoDriverIsLicensesrc==null ? "/adminCarImage?fileName=" + this.state.photoDriverIsLicense : this.state.photoDriverIsLicensesrc} class="img-fluid col-md-4" alt="No image" />
+                                <img src={this.state.photoIdentityCardsrc==null ? "/adminCarImage?fileName=" + this.state.photoIdentityCard : this.state.photoIdentityCardsrc} class="img-fluid col-md-4" alt="No image" />
                             </div>
                             <div class="form-row">
                                 <div class="custom-file col-md-4">
@@ -494,13 +612,10 @@ class Modal extends React.Component {
                                         <div></div>}
                                 </div>
                             </div>
-                            <button class="btn btn-primary" onClick={this.onFileUpload}>Create Car Infomation</button>
                         </div>
                         <div class="modal-footer">
                             <div class="btn-group" role="group" aria-label="Basic example">
-                                <button type="button" class="btn btn-primary">Approve</button>
-                                <button type="button" class="btn btn-secondary" onClick={this.EditClick}>Edit</button>
-                                <button type="button" class="btn btn-danger">Suspende</button>
+                                <button type="button" class="btn btn-secondary" onClick={this.state.editMode ? this.onFileUpload : this.EditClick}>{this.state.editMode ? "Apply" : "Edit"}</button>
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                             </div>
                         </div>

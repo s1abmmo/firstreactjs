@@ -103,7 +103,7 @@ class LoadMarket extends React.Component {
                     adminId:this.state.adminId,
                     adminName:this.state.adminName,
                     adminToken: this.state.adminToken,
-                    page:cpage.currentPage
+                    page:Number(cpage.currentPage) 
                 })
                 .then(res => {
                     this.setState({
@@ -124,7 +124,7 @@ class LoadMarket extends React.Component {
             return (
                 <tbody>
                     {items.map(item => (
-                        <Trip tripId={item.tripId} tripCode={item.tripCode} tripFrom={item.tripFrom} tripTo={item.tripTo} departureTime={item.departureTime} priceStart={item.priceStart} priceToBuyNow={item.priceToBuyNow} priceBidCurrent={item.priceBidCurrent} tripStatus={item.tripStatus} />
+                        <Trip tripId={item.tripId} tripCode={item.tripCode} tripFrom={item.tripFrom} tripTo={item.tripTo} departureTime={item.departureTime} priceStart={item.priceStart} priceToBuyNow={item.priceToBuyNow} priceBidCurrent={item.priceBidCurrent} status={item.status} />
                     ))}
                 </tbody>
             );
@@ -142,8 +142,8 @@ export default class Market extends React.Component {
                         <tr>
                             <th scope="col">Id</th>
                             <th scope="col">Trip Code</th>
-                            <th scope="col">Trip From</th>
-                            <th scope="col">Trip To</th>
+                            <th scope="col" style={{minWidth:'175px'}}>Trip From</th>
+                            <th scope="col" style={{minWidth:'175px'}}>Trip To</th>
                             <th scope="col">Departure Time</th>
                             <th scope="col">Price Start</th>
                             <th scope="col">Price To Buy Now</th>
@@ -174,7 +174,33 @@ class Trip extends React.Component {
             adminToken: Cookies.get('adminToken'),
         };
         this.MoreClick = this.MoreClick.bind(this);
+        this.Active = this.Active.bind(this);
+        this.Suspende = this.Suspende.bind(this);
     }
+    Active() {
+        axios.post("/adminActiveTrip", {
+            adminId: this.state.adminId,
+            adminName: this.state.adminName,
+            adminToken: this.state.adminToken,
+            tripId: this.props.tripId,
+            tripCode: this.props.tripCode
+        })
+            .then(response => {
+            })
+    }
+
+    Suspende() {
+        axios.post("/adminSuspendeTrip", {
+            adminId: this.state.adminId,
+            adminName: this.state.adminName,
+            adminToken: this.state.adminToken,
+            tripId: this.props.tripId,
+            tripCode: this.props.tripCode
+        })
+            .then(response => {
+            })
+    }
+
     MoreClick() {
         console.log(this.props.tripCode);
         store.dispatch({ type: 'UPDATETRIPCODE', tripCode: this.props.tripCode });
@@ -198,18 +224,18 @@ class Trip extends React.Component {
                     <th>{this.props.tripFrom}</th>
                     <th>{this.props.tripTo}</th>
                     <th>{new Date(this.props.departureTime).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</th>
-                    <th>{this.props.priceStart}</th>
-                    <th>{this.props.priceToBuyNow}</th>
-                    <th>{this.props.priceBidCurrent}</th>
-                    <th>{this.props.tripStatus}</th>
+                    <th>{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.props.priceStart)}</th>
+                    <th>{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.props.priceToBuyNow)}</th>
+                    <th>{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.props.priceBidCurrent)}</th>
+                    <th>{this.props.status}</th>
                     <th>
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Action
                                 </button>
                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                <a class="dropdown-item" href="#" >Approve</a>
-                                <a class="dropdown-item" href="#" >Suspende</a>
+                                <a class="dropdown-item" href="#" onClick={this.Active}>Active</a>
+                                <a class="dropdown-item" href="#" onClick={this.Suspende}>Suspende</a>
                             </div>
                         </div>
                     </th>
@@ -311,23 +337,23 @@ class Modal extends React.Component {
         // this.PreviousPage = this.PreviousPage.bind(this);
         // this.NextPage = this.NextPage.bind(this);
         this.EditClick = this.EditClick.bind(this);
-        this.Loop = this.Loop.bind(this);
+        // this.Loop = this.Loop.bind(this);
         this.ApplyClick = this.ApplyClick.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.Active = this.Active.bind(this);
         this.Suspende = this.Suspende.bind(this);
     }
-    IsMounted = false;
-    componentWillMount() {
-        this.IsMounted = false;
-    }
-    componentDidMount() {
-        this.IsMounted = true;
-        this.Loop();
-    }
+    // IsMounted = false;
+    // componentWillMount() {
+    //     this.IsMounted = false;
+    // }
+    // componentDidMount() {
+    //     this.IsMounted = true;
+    //     this.Loop();
+    // }
 
     EditClick() {
-        this.IsMounted = false;
+        // this.IsMounted = false;
         this.setState({
             editMode: !this.state.editMode
         })
@@ -379,26 +405,26 @@ class Modal extends React.Component {
     }
 
 
-    Loop() {
-        setTimeout(
-            function () {
-                console.log(this.IsMounted + this.state.tripCode);
-                if (this.IsMounted)
-                    if (this.state.tripCode != null) {
-                        axios.get("/adminLoadTripInfomation?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&tripCode=" + this.state.tripCode)
-                            .then(response => {
-                                this.setState({
-                                    tripInfomation: response.data
-                                });
+    // Loop() {
+    //     setTimeout(
+    //         function () {
+    //             console.log(this.IsMounted + this.state.tripCode);
+    //             if (this.IsMounted)
+    //                 if (this.state.tripCode != null) {
+    //                     axios.get("/adminLoadTripInfomation?adminId=" + this.state.adminId + "&adminName=" + this.state.adminName + "&adminToken=" + this.state.adminToken + "&tripCode=" + this.state.tripCode)
+    //                         .then(response => {
+    //                             this.setState({
+    //                                 tripInfomation: response.data
+    //                             });
 
-                            })
-                    }
-                this.Loop();
-            }
-                .bind(this),
-            1000
-        );
-    }
+    //                         })
+    //                 }
+    //             this.Loop();
+    //         }
+    //             .bind(this),
+    //         1000
+    //     );
+    // }
 
     Active() {
         axios.post("/adminActiveTrip", {
@@ -433,6 +459,19 @@ class Modal extends React.Component {
                 this.setState({
                     tripCode: cpage.modal.tripCode
                 })
+                axios.post("/adminLoadTripInfomation",{
+                    adminId: this.state.adminId,
+                    adminName: this.state.adminName,
+                    adminToken: this.state.adminToken,
+                    tripCode: cpage.modal.tripCode
+                })
+                .then(response => {
+                    this.setState({
+                        tripInfomation: response.data
+                    });
+
+                })
+
             }
         }
         );
@@ -451,33 +490,33 @@ class Modal extends React.Component {
                                 <li class="list-group-item">
                                     <div class="row">
                                         <div class="col-3">From</div>
-                                        {this.state.editMode ? <textarea name="tripFrom" type="text" class="form-control col-5" rows="3" placeholder={this.state.tripInfomation.tripFrom} onChange={this.handleChange}></textarea> :
+                                        {this.state.editMode ? <textarea name="tripFrom" type="text" class="form-control col-5" rows="3" defaultValue={this.state.tripInfomation.tripFrom} onChange={this.handleChange}></textarea> :
                                             <div class="col">{this.state.tripInfomation.tripFrom}
                                             </div>}
                                     </div>
                                 </li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">To</div>{this.state.editMode ? <textarea name="tripTo" type="text" class="form-control col-5" rows="3" placeholder={this.state.tripInfomation.tripTo} onChange={this.handleChange}></textarea> : <div class="col">{this.state.tripInfomation.tripTo}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Departure Time</div>{this.state.editMode ? <input name="departureTime" type="datetime-local" class="form-control col-5" placeholder={moment(this.state.tripInfomation.departureTime).format('YYYY-MM-DDTHH:SS')} onChange={this.handleChange}></input> : <div class="col">{new Date(this.state.tripInfomation.departureTime).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Method of Receiveing Money</div>{this.state.editMode ? <select name="methodOfReceivingMoney" class="form-control col-3" id="exampleFormControlSelect1" onChange={this.handleChange}> <option value="0">The driver takes the money</option> <option value="1">Transfer</option> </select> : <div class="col">{this.state.tripInfomation.methodOfReceivingMoney}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Range Of Verhicle</div>{this.state.editMode ? <input name="rangeOfVehicle" type="text" class="form-control col-5" placeholder={this.state.tripInfomation.rangeOfVehicle} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.rangeOfVehicle}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Price To Buy Now</div>{this.state.editMode ? <input name="priceToBuyNow" type="number" class="form-control col-5" placeholder={this.state.tripInfomation.priceToBuyNow} onChange={this.handleChange}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceToBuyNow)}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Price Start</div>{this.state.editMode ? <input name="priceStart" type="number" class="form-control col-5" placeholder={this.state.tripInfomation.priceStart} onChange={this.handleChange}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceStart)}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Price Bid Current</div>{this.state.editMode ? <input type="number" class="form-control col-5" value={this.state.tripInfomation.priceBidCurrent} onChange={this.handleChange} readOnly></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceBidCurrent)}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Id Last User Bid</div>{this.state.editMode ? <input type="text" class="form-control col-5" value={this.state.tripInfomation.idLastUserBid} onChange={this.handleChange} readOnly></input> : <div class="col">{this.state.tripInfomation.idLastUserBid}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">End Bid</div>{this.state.editMode ? <input name="endBid" type="text" class="form-control col-5" placeholder={this.state.tripInfomation.endBid} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.endBid}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Price Place Bid</div>{this.state.editMode ? <input name="pricePlaceBid" type="number" class="form-control col-5" placeholder={new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.pricePlaceBid)} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.pricePlaceBid}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Customer Is FullName</div>{this.state.editMode ? <input name="customerIsFullName" type="text" class="form-control col-5" placeholder={this.state.tripInfomation.customerIsFullName}></input> : <div class="col">{this.state.tripInfomation.customerIsFullName}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Customer Is Phone</div>{this.state.editMode ? <input name="customerIsPhone" type="number" class="form-control col-5" placeholder={this.state.tripInfomation.customerIsPhone} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.customerIsPhone}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Time Open On Market</div>{this.state.editMode ? <input name="timeOpenOnMarket" type="datetime-local" class="form-control col-5" placeholder={moment(this.state.tripInfomation.timeOpenOnMarket).format('YYYY-MM-DDTHH:SS')} onChange={this.handleChange}></input> : <div class="col">{new Date(this.state.tripInfomation.timeOpenOnMarket).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Guest Price</div>{this.state.editMode ? <input name="guestPrice" type="number" class="form-control col-5" placeholder={this.state.tripInfomation.guestPrice} onChange={this.handleChange}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.guestPrice)}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Trip Type</div>{this.state.editMode ? <input name="tripType" type="text" class="form-control col-5" placeholder={this.state.tripInfomation.tripType} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.tripType}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Id User Posted</div>{this.state.editMode ? <input type="text" class="form-control col-5" value={this.state.tripInfomation.idUserPosted} onChange={this.handleChange} readOnly></input> : <div class="col">{this.state.tripInfomation.idUserPosted}</div>}</div></li>
-                                <li class="list-group-item"><div class="row"><div class="col-3">Datetime Posted</div>{this.state.editMode ? <input type="datetime-local" class="form-control col-5" value={moment(this.state.tripInfomation.dateTimePosted).format('YYYY-MM-DDTHH:SS')} onChange={this.handleChange} readOnly></input> : <div class="col">{new Date(this.state.tripInfomation.dateTimePosted).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">To</div>{this.state.editMode ? <textarea name="tripTo" type="text" class="form-control col-5" rows="3" defaultValue={this.state.tripInfomation.tripTo} onChange={this.handleChange}></textarea> : <div class="col">{this.state.tripInfomation.tripTo}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Departure Time</div>{this.state.editMode ? <input name="departureTime" type="datetime-local" class="form-control col-5" defaultValue={moment(this.state.tripInfomation.departureTime).format('YYYY-MM-DDTHH:SS')} onChange={this.handleChange}></input> : <div class="col">{new Date(this.state.tripInfomation.departureTime).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Method of Receiveing Money</div>{this.state.editMode ? <select name="methodOfReceivingMoney" class="form-control col-3" defaultValue={this.state.tripInfomation.methodOfReceivingMoney} onChange={this.handleChange}> <option value="0">The driver takes the money</option> <option value="1">Transfer</option> </select> : <div class="col">{this.state.tripInfomation.methodOfReceivingMoney}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Range Of Verhicle</div>{this.state.editMode ? <input name="rangeOfVehicle" type="text" class="form-control col-5" defaultValue={this.state.tripInfomation.rangeOfVehicle} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.rangeOfVehicle}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Price To Buy Now</div>{this.state.editMode ? <input name="priceToBuyNow" type="number" class="form-control col-5" defaultValue={this.state.tripInfomation.priceToBuyNow} onChange={this.handleChange}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceToBuyNow)}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Price Start</div>{this.state.editMode ? <input name="priceStart" type="number" class="form-control col-5" defaultValue={this.state.tripInfomation.priceStart} onChange={this.handleChange}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceStart)}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Price Bid Current</div>{this.state.editMode ? <input type="number" class="form-control col-5" defaultValue={this.state.tripInfomation.priceBidCurrent} onChange={this.handleChange} readOnly></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.priceBidCurrent)}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Id Last User Bid</div>{this.state.editMode ? <input type="text" class="form-control col-5" defaultValue={this.state.tripInfomation.idLastUserBid} onChange={this.handleChange} readOnly></input> : <div class="col">{this.state.tripInfomation.idLastUserBid}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">End Bid</div>{this.state.editMode ? <select name="endBid" class="form-control col-3" defaultValue={this.state.tripInfomation.endBid} onChange={this.handleChange}> <option value="true">True</option> <option value="false">False</option> </select> : <div class="col">{this.state.tripInfomation.endBid}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Price Place Bid</div>{this.state.editMode ? <input name="pricePlaceBid" type="number" class="form-control col-5" defaultValue={this.state.tripInfomation.pricePlaceBid} onChange={this.handleChange}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.pricePlaceBid)}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Customer Is FullName</div>{this.state.editMode ? <input name="customerIsFullName" type="text" class="form-control col-5" defaultValue={this.state.tripInfomation.customerIsFullName}></input> : <div class="col">{this.state.tripInfomation.customerIsFullName}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Customer Is Phone</div>{this.state.editMode ? <input name="customerIsPhone" type="number" class="form-control col-5" defaultValue={this.state.tripInfomation.customerIsPhone} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.customerIsPhone}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Time Open On Market</div>{this.state.editMode ? <input name="timeOpenOnMarket" type="datetime-local" class="form-control col-5" defaultValue={moment(this.state.tripInfomation.timeOpenOnMarket).format('YYYY-MM-DDTHH:SS')} onChange={this.handleChange}></input> : <div class="col">{new Date(this.state.tripInfomation.timeOpenOnMarket).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Guest Price</div>{this.state.editMode ? <input name="guestPrice" type="number" class="form-control col-5" defaultValue={this.state.tripInfomation.guestPrice} onChange={this.handleChange}></input> : <div class="col">{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.state.tripInfomation.guestPrice)}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Trip Type</div>{this.state.editMode ? <input name="tripType" type="text" class="form-control col-5" defaultValue={this.state.tripInfomation.tripType} onChange={this.handleChange}></input> : <div class="col">{this.state.tripInfomation.tripType}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Id User Posted</div>{this.state.editMode ? <input type="text" class="form-control col-5" defaultValue={this.state.tripInfomation.idUserPosted} onChange={this.handleChange} readOnly></input> : <div class="col">{this.state.tripInfomation.idUserPosted}</div>}</div></li>
+                                <li class="list-group-item"><div class="row"><div class="col-3">Datetime Posted</div>{this.state.editMode ? <input type="datetime-local" class="form-control col-5" defaultValue={moment(this.state.tripInfomation.dateTimePosted).format('YYYY-MM-DDTHH:SS')} onChange={this.handleChange} readOnly></input> : <div class="col">{new Date(this.state.tripInfomation.dateTimePosted).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>}</div></li>
                             </ul>
                         </div>
                         <div class="modal-footer">
                             <div class="btn-group" role="group" aria-label="Basic example">
-                                <button type="button" class="btn btn-primary" onClick={this.Active}>Approve</button>
+                                <button type="button" class="btn btn-primary" onClick={this.Active}>Active</button>
                                 <button type="button" class="btn btn-secondary" onClick={this.state.editMode ? this.ApplyClick : this.EditClick}>{this.state.editMode ? "Apply" : "Edit"}</button>
                                 <button type="button" class="btn btn-danger" onClick={this.Suspende}>Suspende</button>
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

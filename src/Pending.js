@@ -71,16 +71,17 @@ export default class Pending extends React.Component {
                         <tr>
                             <th scope="col">tripId</th>
                             <th scope="col">Trip Code</th>
-                            <th scope="col">Trip From</th>
-                            <th scope="col">Trip To</th>
+                            <th scope="col" style={{minWidth:'175px'}}>Trip From</th>
+                            <th scope="col" style={{minWidth:'175px'}}>Trip To</th>
                             <th scope="col">Departure Time</th>
-                            <th scope="col">Method Of Receiving Money</th>
+                            <th scope="row">Method Of Receiving Money</th>
                             <th scope="col">Range Of Vehicle</th>
                             <th scope="col">customerIsFullName</th>
                             <th scope="col">customerIsPhone</th>
                             <th scope="col">Time Open On Market</th>
                             <th scope="col">Guest Price</th>
-                            <th scope="col">Price To Buy Now</th>
+                            <th scope="col">Price To Sell Now</th>
+                            <th scope="col">Approved</th>
                             <th scope="col">Trip Type</th>
                             <th scope="col">Id User Posted</th>
                             <th scope="col">dateTimePosted</th>
@@ -138,7 +139,7 @@ class LoadPendingTrips extends React.Component {
                     adminId: this.state.adminId,
                     adminName: this.state.adminName,
                     adminToken: this.state.adminToken,
-                    page: cpage.currentPage
+                    page: Number(cpage.currentPage)
                 })
                     .then(res => {
                         this.setState({
@@ -159,7 +160,7 @@ class LoadPendingTrips extends React.Component {
             return (
                 <tbody>
                     {items.map(item => (
-                        <PendingTrip tripId={item.tripId} tripCode={item.tripCode} tripFrom={item.tripFrom} tripTo={item.tripTo} departureTime={item.departureTime} methodOfReceivingMoney={item.methodOfReceivingMoney} rangeOfVehicle={item.rangeOfVehicle} customerIsFullName={item.customerIsFullName} customerIsPhone={item.customerIsPhone} timeOpenOnMarket={item.timeOpenOnMarket} guestPrice={item.guestPrice} priceToSellNow={item.priceToSellNow} tripType={item.tripType} idUserPosted={item.idUserPosted} dateTimePosted={item.dateTimePosted} />
+                        <PendingTrip tripId={item.tripId} tripCode={item.tripCode} tripFrom={item.tripFrom} tripTo={item.tripTo} departureTime={item.departureTime} methodOfReceivingMoney={item.methodOfReceivingMoney} rangeOfVehicle={item.rangeOfVehicle} customerIsFullName={item.customerIsFullName} customerIsPhone={item.customerIsPhone} timeOpenOnMarket={item.timeOpenOnMarket} guestPrice={item.guestPrice} priceToSellNow={item.priceToSellNow} approved={item.approved} tripType={item.tripType} idUserPosted={item.idUserPosted} dateTimePosted={item.dateTimePosted} />
                     ))}
                 </tbody>
             );
@@ -196,15 +197,17 @@ class PendingTrip extends React.Component {
                     <th>{this.props.tripTo}</th>
                     <th>{new Date(this.props.departureTime).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</th>
                     <th>{this.props.methodOfReceivingMoney}</th>
-                    <th>{this.props.rangeOfVehicle}</th>
+                    <th>{this.props.rangeOfVehicle}-seater</th>
                     <th>{this.props.customerIsFullName}</th>
                     <th>{this.props.customerIsPhone}</th>
                     <th>{new Date(this.props.timeOpenOnMarket).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</th>
-                    <th>{this.props.guestPrice}</th>
-                    <th>{this.props.priceToSellNow}</th>
+                    <th>{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.props.guestPrice)}</th>
+                    <th>{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(this.props.priceToSellNow)}</th>
+                    <th>{this.props.approved}</th>
                     <th>{this.props.tripType}</th>
                     <th>{this.props.idUserPosted}</th>
                     <th>{new Date(this.props.dateTimePosted).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</th>
+
                     <th>
                         <button type="button" class="btn btn-dark" data-toggle="modal" data-target="#exampleModal" data-whatever="@mdo" onClick={this.MoreClick}>Approve</button>
                     </th>
@@ -299,26 +302,27 @@ class Modal extends React.Component {
             editMode: false,
             tripInfomation: {},
             tripCode: null,
-            pricePlaceBid: 10000
+            pricePlaceBid: 10000,
+            status: 0
         };
         // this.PreviousPage = this.PreviousPage.bind(this);
         // this.NextPage = this.NextPage.bind(this);
         this.EditClick = this.EditClick.bind(this);
-        this.Loop = this.Loop.bind(this);
+        // this.Loop = this.Loop.bind(this);
         this.Approve = this.Approve.bind(this);
         this.handleChange = this.handleChange.bind(this);
     }
-    IsMounted = false;
-    componentWillMount() {
-        this.IsMounted = false;
-    }
-    componentDidMount() {
-        this.IsMounted = true;
-        this.Loop();
-    }
+    // IsMounted = false;
+    // componentWillMount() {
+    //     this.IsMounted = false;
+    // }
+    // componentDidMount() {
+    //     this.IsMounted = true;
+    //     // this.Loop();
+    // }
 
     EditClick() {
-        this.IsMounted = false;
+        // this.IsMounted = false;
         this.setState({
             editMode: !this.state.editMode
         })
@@ -342,6 +346,7 @@ class Modal extends React.Component {
 
             tripId: this.state.tripId,
             tripCode: this.state.tripCode,
+            
             tripFrom: this.state.tripFrom,
             tripTo: this.state.tripTo,
             departureTime: this.state.departureTime,
@@ -352,9 +357,10 @@ class Modal extends React.Component {
             customerIsPhone: this.state.customerIsPhone,
             timeOpenOnMarket: this.state.timeOpenOnMarket,
             guestPrice: this.state.guestPrice,
-            priceToBuyNow: this.state.priceToSellNow,
+            priceToSellNow: this.state.priceToSellNow,
             tripType: this.state.tripType,
             pricePlaceBid: this.state.pricePlaceBid,
+            status: this.state.status
         };
         axios.post("/adminApproveTrip", params)
             .then(res => {
@@ -366,46 +372,6 @@ class Modal extends React.Component {
         })
     }
 
-
-    Loop() {
-        setTimeout(
-            function () {
-                console.log(this.IsMounted + this.state.tripCode);
-                if (this.IsMounted)
-                    if (this.state.tripCode != null) {
-                        axios.post("/adminLoadPendingTripInfomation", {
-                            adminId: this.state.adminId,
-                            adminName: this.state.adminName,
-                            adminToken: this.state.adminToken,
-                            tripCode: this.state.tripCode
-                        })
-                            .then(response => {
-                                this.setState({
-                                    tripInfomation: response.data,
-                                    tripId: response.data.tripId,
-                                    tripCode: response.data.tripCode,
-                                    tripFrom: response.data.tripFrom,
-                                    tripTo: response.data.tripTo,
-                                    departureTime: response.data.departureTime,
-                                    methodOfReceivingMoney: response.data.methodOfReceivingMoney,
-                                    rangeOfVehicle: response.data.rangeOfVehicle,
-                                    priceStart: response.data.priceStart,
-                                    customerIsFullName: response.data.customerIsFullName,
-                                    customerIsPhone: response.data.customerIsPhone,
-                                    timeOpenOnMarket: response.data.timeOpenOnMarket,
-                                    guestPrice: response.data.guestPrice,
-                                    priceToBuyNow: response.data.priceToSellNow,
-                                    tripType: response.data.tripType,
-                                });
-                            })
-                    }
-                this.Loop();
-            }
-                .bind(this),
-            1000
-        );
-    }
-
     render() {
         store.subscribe(() => {
             if (store.getState().modal.status == true) {
@@ -415,6 +381,32 @@ class Modal extends React.Component {
                 this.setState({
                     tripCode: cpage.modal.tripCode
                 })
+                axios.post("/adminLoadPendingTripInfomation", {
+                    adminId: this.state.adminId,
+                    adminName: this.state.adminName,
+                    adminToken: this.state.adminToken,
+                    tripCode: cpage.modal.tripCode
+                })
+                    .then(response => {
+                        this.setState({
+                            tripInfomation: response.data,
+                            tripId: response.data.tripId,
+                            tripCode: response.data.tripCode,
+                            tripFrom: response.data.tripFrom,
+                            tripTo: response.data.tripTo,
+                            departureTime: response.data.departureTime,
+                            methodOfReceivingMoney: response.data.methodOfReceivingMoney,
+                            rangeOfVehicle: response.data.rangeOfVehicle,
+                            priceStart: response.data.priceStart,
+                            customerIsFullName: response.data.customerIsFullName,
+                            customerIsPhone: response.data.customerIsPhone,
+                            timeOpenOnMarket: response.data.timeOpenOnMarket,
+                            guestPrice: response.data.guestPrice,
+                            priceToSellNow: response.data.priceToSellNow,
+                            tripType: response.data.tripType,
+                        });
+                    })
+
             }
         }
         );
@@ -469,16 +461,25 @@ class Modal extends React.Component {
                                                 <option value="1">Transfer</option>
                                             </select>
                                             :
-                                            <div class="col">{this.state.tripInfomation.methodOfReceivingMoney}</div>}
+                                            <div class="col">{this.state.tripInfomation.methodOfReceivingMoney=="0" ? "The driver takes the money" : "Transfer"}</div>}
                                     </div>
                                 </li>
                                 <li class="list-group-item">
                                     <div class="row">
                                         <div class="col-3">Range Of Verhicle</div>
                                         {this.state.editMode ?
-                                            <input name="rangeOfVehicle" type="text" class="form-control col-5" defaultValue={this.state.tripInfomation.rangeOfVehicle} onChange={this.handleChange}></input>
+                                            <select class="form-control col-2" name="rangeOfVerhicle" defaultValue={this.state.tripInfomation.rangeOfVehicle} onChange={this.handleChange}>
+                                            <option selected>Choose...</option>
+                                            <option value="4">4-seater</option>
+                                            <option value="5">5-seater</option>
+                                            <option value="7">7-seater</option>
+                                            <option value="16">16-seater</option>
+                                            <option value="29">29-seater</option>
+                                            <option value="35">35-seater</option>
+                                            <option value="45">45-seater</option>
+                                        </select>                
                                             :
-                                            <div class="col">{this.state.tripInfomation.rangeOfVehicle}</div>}
+                                            <div class="col">{this.state.tripInfomation.rangeOfVehicle}-seater</div>}
                                     </div>
                                 </li>
                                 <li class="list-group-item">
@@ -539,9 +540,9 @@ class Modal extends React.Component {
 
                                 <li class="list-group-item">
                                     <div class="row">
-                                        <div class="col-3">approved</div>
+                                        <div class="col-3">Approved</div>
                                         {this.state.editMode ?
-                                            <input name="approved" type="text" class="form-control col-5" defaultValue={this.state.tripInfomation.approved} onChange={this.handleChange}></input>
+                                            <input name="approved" type="text" class="form-control col-5" defaultValue={this.state.tripInfomation.approved} onChange={this.handleChange} readOnly></input>
                                             :
                                             <div class="col">{this.state.tripInfomation.approved}</div>}
                                     </div>
@@ -577,6 +578,11 @@ class Modal extends React.Component {
                                     <div class="row">
                                     <label>Price Place Bid</label>
                                         <input name="pricePlaceBid" type="number" class="form-control col-2" defaultValue={this.state.pricePlaceBid} onChange={this.handleChange}></input>
+                                        <label>Price Place Bid</label>
+                                        <select name="status" class="form-control col-3" onChange={this.handleChange}>
+                                                <option value="0">Active</option>
+                                                <option value="1">Suspende</option>
+                                            </select>
                                     </div>
                                 </li>
 

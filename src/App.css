@@ -61,6 +61,8 @@ tr.collapse.in {
   color: white;
 }
 
+.table thead tr th {  white-space: nowrap; }
+
 * {
   font-size: 100%;
   font-family: Arial;
