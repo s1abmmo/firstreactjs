@@ -1749,15 +1749,16 @@ app.post('/adminApproveTrip', async function (req, res) {
     }
 });
 
+userMaxRowInPage=10;
 app.post('/userTransactionHistory', async function (req, res) {
     var accountId = req.param('accountId');
     var accountUsername = req.param('accountUsername');
     var accountToken = req.param('accountToken');
     var page = req.param('page');
-
+    var rowStart = ((page - 1) * userMaxRowInPage);
     if (await CheckAuthentication(accountId, accountUsername, accountToken, null)) {
         console.log('Get User Transaction History ' + page);
-        conn.query("SELECT * FROM transactionHistory WHERE accountId='" + accountId + "';", function (err, result, fields) {
+        conn.query("SELECT * FROM transactionHistory WHERE accountId='" + accountId + "' ORDER BY transactionId DESC LIMIT " + rowStart + "," + userMaxRowInPage + ";", function (err, result, fields) {
             if (err) {
                 var obj = {
                     status: "ERROR",
@@ -1771,6 +1772,11 @@ app.post('/userTransactionHistory', async function (req, res) {
             res.send(JSON.stringify(result));
         });
     }
+});
+
+app.post('/userUploadInfomation', async function (req, res) {
+    console.log("userUploadInfomation");
+    console.log(req.param('accountAvatar'));
 });
 
 var htmlPath = path.join(__dirname, 'build');
