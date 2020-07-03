@@ -60,7 +60,7 @@ conn.connect(function (err) {
         if (err)
             console.log(err.message)
     });
-    conn.query("CREATE TABLE transactionHistory ( transactionId INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, transactionAmout INT(10),transactionNote NVARCHAR(100),transactionDateTime DATETIME,accountId VARCHAR(10));", function (err, result, fields) {
+    conn.query("CREATE TABLE transactionHistory ( transactionId INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, transactionAmount INT(10),transactionNote NVARCHAR(100),transactionDateTime DATETIME,accountId VARCHAR(10));", function (err, result, fields) {
         if (!err)
             console.log("Create table History success !");
         if (err)
@@ -119,10 +119,10 @@ app.get('/login', function (req, res) {
     });
 });
 
-async function InsertTransaction(transactionAmout, transactionNote, accountId) {
+async function InsertTransaction(transactionAmount, transactionNote, accountId) {
     return new Promise(function (resolve, reject) {
         var success = false;
-        conn.query("INSERT INTO transactionhistory (transactionAmout,transactionNote,transactionDateTime,accountId) VALUES ('"+transactionAmout+"','"+transactionNote+"','"+dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss")+"','"+accountId+"');", function (err, resultAuthentication, fields) {
+        conn.query("INSERT INTO transactionhistory (transactionAmount,transactionNote,transactionDateTime,accountId) VALUES ('"+transactionAmount+"','"+transactionNote+"','"+dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss")+"','"+accountId+"');", function (err, resultAuthentication, fields) {
             if (err) throw err;
             console.log(success);
             resolve(success);
@@ -1767,6 +1767,8 @@ app.post('/userTransactionHistory', async function (req, res) {
                 res.send(JSON.stringify(obj));
             }
             if (err) throw err;
+            console.log(JSON.stringify(result));
+            res.send(JSON.stringify(result));
         });
     }
 });
