@@ -43,7 +43,7 @@ var conn = mysql.createConnection({
 conn.connect(function (err) {
     if (err) throw err;
     console.log("Connected!");
-    conn.query("CREATE TABLE accounts ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, username VARCHAR(15), password VARCHAR(100),email VARCHAR(100),phone VARCHAR(100), fullname NVARCHAR(50),token VARCHAR(32),currentBalance VARCHAR(10),dateTimeCreated DATETIME,status VARCHAR(1));", function (err, result, fields) {
+    conn.query("CREATE TABLE accounts ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, username VARCHAR(15), password VARCHAR(100),email VARCHAR(100),phone VARCHAR(100), fullname NVARCHAR(50),token VARCHAR(32),currentBalance VARCHAR(10),dateTimeCreated DATETIME,status VARCHAR(1),photoAvatar VARCHAR(1000));", function (err, result, fields) {
         if (!err)
             console.log("Create table success !");
         if (err)
@@ -1784,15 +1784,68 @@ app.post('/userTransactionHistory', async function (req, res) {
 
 app.post('/userUploadInfomation', async function (req, res) {
     console.log("userUploadInfomation");
+    var accountId = req.param('accountId');
+    var accountUsername = req.param('accountUsername');
+    var accountToken = req.param('accountToken');
+
+    var queryList = [];
+
+    var fullname = req.param('fullname');
+    if (fullname != null)
+        queryList.push("fullname='" + fullname + "'");
+
+    var phone = req.param('phone');
+    if (phone != null)
+        queryList.push("phone='" + phone + "'");
+
+    var email = req.param('email');
+    if (email != null)
+        queryList.push("email='" + email + "'");
+
+    var accountAvatar = req.body.accountAvatar;
+    if (accountAvatar != null) {
+        queryList.push("photoAvatar='" + accountId + "-photoAvatar'");
+
+        var extension = undefined;
+        // do something like this
+        var lowerCase = decoded.toLowerCase();
+        if (lowerCase.indexOf("png") !== -1) extension = "png"
+        else if (lowerCase.indexOf("jpg") !== -1 || lowerCase.indexOf("jpeg") !== -1)
+            extension = "jpg"
+        else extension = "tiff";
+
+
+        var realFile = Buffer.from(accountAvatar, "base64");
+        var pathFile = path.join(__dirname, 'test.jpg');
+        fs.writeFile(pathFile, realFile, function (err) {
+            if (err)
+                console.log(err);
+            console.log("OK");
+        });
+
+    }
+
+    // var carIsName=req.param('carIsName');
+    // var licensePlate=req.param('licensePlate');
+    // var numerOfSeater=req.param('numerOfSeater');
+    // var yearOfManufacture=req.param('yearOfManufacture');
+
+
+    if (await CheckAuthentication(accountId, accountUsername, accountToken)) {
+
+        conn.query("SELECT fullname,phone,email FROM accounts WHERE id=" + accountId + ";", function (err, result, fields) {
+            if (err) throw err;
+
+            var obj = [];
+            if (result.length > 0) {
+                obj = result[0];
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+    }
+
     var img = req.body.accountAvatar;
-    var realFile = Buffer.from(img, "base64");
-    //console.log(name);
-    var pathFile = path.join(__dirname, 'test.jpg');
-    fs.writeFile(pathFile, realFile, function (err) {
-        if (err)
-            console.log(err);
-        console.log("OK");
-    });
     res.send("OK");
 });
 
@@ -1840,6 +1893,24 @@ app.post('/userManual', async function (req, res) {
         res.send(JSON.stringify(obj));
     });
 });
+
+app.post('/userLoadInfomation', async function (req, res) {
+    var accountId = req.param('accountId');
+    var accountUsername = req.param('accountUsername');
+    var accountToken = req.param('accountToken');
+    if (await CheckAuthentication(accountId, accountUsername, accountToken)) {
+        conn.query("SELECT fullname,phone,email FROM accounts WHERE id=" + accountId + ";", function (err, result, fields) {
+            if (err) throw err;
+            var obj = [];
+            if (result.length > 0) {
+                obj = result[0];
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+    }
+});
+
 
 
 
