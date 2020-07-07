@@ -2,7 +2,8 @@ var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
-app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
+// app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
+app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 var mysql = require('mysql');
 var dateFormat = require('dateformat');
 var path = require('path');
@@ -78,6 +79,13 @@ conn.connect(function (err) {
         if (err)
             console.log(err.message)
     });
+    conn.query("CREATE TABLE contentShow ( id INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY, content NVARCHAR(1000), type VARCHAR(1), idAdmin VARCHAR(2), dateTimePosted DATETIME);", function (err, result, fields) {
+        if (!err)
+            console.log("Create table contentShow success !");
+        if (err)
+            console.log(err.message)
+    });
+
 });
 
 app.get('/login', function (req, res) {
@@ -122,7 +130,7 @@ app.get('/login', function (req, res) {
 async function InsertTransaction(transactionAmount, transactionNote, accountId) {
     return new Promise(function (resolve, reject) {
         var success = false;
-        conn.query("INSERT INTO transactionhistory (transactionAmount,transactionNote,transactionDateTime,accountId) VALUES ('"+transactionAmount+"','"+transactionNote+"','"+dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss")+"','"+accountId+"');", function (err, resultAuthentication, fields) {
+        conn.query("INSERT INTO transactionhistory (transactionAmount,transactionNote,transactionDateTime,accountId) VALUES ('" + transactionAmount + "','" + transactionNote + "','" + dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss") + "','" + accountId + "');", function (err, resultAuthentication, fields) {
             if (err) throw err;
             console.log(success);
             resolve(success);
@@ -907,13 +915,13 @@ app.get('/addBalance', async function (req, res) {
                 var amountAdd = currentBalance + amountInt;
                 conn.query("UPDATE accounts SET currentBalance='" + amountAdd + "' WHERE username='" + userName + "' AND id=" + idUser + ";", async function (err, result, fields) {
                     if (err) throw err;
-                    if(InsertTransaction(amountInt,"Admin add",idUser)){
+                    if (InsertTransaction(amountInt, "Admin add", idUser)) {
                         var obj = {
                             status: "OK",
                             message: "Add balance success"
                         }
                         console.log(JSON.stringify(obj));
-                        res.send(JSON.stringify(obj));    
+                        res.send(JSON.stringify(obj));
                     }
                 });
 
@@ -1749,7 +1757,7 @@ app.post('/adminApproveTrip', async function (req, res) {
     }
 });
 
-userMaxRowInPage=10;
+userMaxRowInPage = 10;
 app.post('/userTransactionHistory', async function (req, res) {
     var accountId = req.param('accountId');
     var accountUsername = req.param('accountUsername');
@@ -1776,8 +1784,64 @@ app.post('/userTransactionHistory', async function (req, res) {
 
 app.post('/userUploadInfomation', async function (req, res) {
     console.log("userUploadInfomation");
-    console.log(req.param('accountAvatar'));
+    var img = req.body.accountAvatar;
+    var realFile = Buffer.from(img, "base64");
+    //console.log(name);
+    var pathFile = path.join(__dirname, 'test.jpg');
+    fs.writeFile(pathFile, realFile, function (err) {
+        if (err)
+            console.log(err);
+        console.log("OK");
+    });
+    res.send("OK");
 });
+
+app.post('/insertContentShow', async function (req, res) {
+    var adminId = req.param('adminId');
+    var adminName = req.param('adminName');
+    var adminToken = req.param('adminToken');
+    var content = req.param('content');
+    var type = req.param('type');
+
+    if (await CheckAuthenticationAdmin(adminId, adminName, adminToken, null)) {
+        conn.query("INSERT INTO contentShow (content,type,idAdmin,dateTimePosted) VALUES ('" + content + "','" + type + "','" + adminId + "','" + dateFormat(Date.now(), "yyyy-mm-dd HH:MM:ss") + "');", function (err, result, fields) {
+            if (err) throw err;
+            var obj = {
+                status: "OK",
+                message: "Thêm thành công"
+            }
+            console.log(JSON.stringify(obj));
+            res.send(JSON.stringify(obj));
+        });
+
+    }
+});
+
+app.post('/instructionToRecharge', async function (req, res) {
+    conn.query("SELECT content FROM contentShow WHERE type='0' ORDER BY id DESC LIMIT 1;", function (err, result, fields) {
+        if (err) throw err;
+        var obj = [];
+        if (result.length > 0) {
+            obj = result[0];
+        }
+        console.log(JSON.stringify(obj));
+        res.send(JSON.stringify(obj));
+    });
+});
+
+app.post('/userManual', async function (req, res) {
+    conn.query("SELECT content FROM contentShow WHERE type='1' ORDER BY id DESC LIMIT 1;", function (err, result, fields) {
+        if (err) throw err;
+        var obj = [];
+        if (result.length > 0) {
+            obj = result[0];
+        }
+        console.log(JSON.stringify(obj));
+        res.send(JSON.stringify(obj));
+    });
+});
+
+
 
 var htmlPath = path.join(__dirname, 'build');
 
